@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataForge — AI Data Engineering Agents</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090E;--bg2:#0D1018;--bg3:#141926;--bg4:#1B2235;
+  --b:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.11);--b3:rgba(255,255,255,0.18);
+  --txt:#DDE2EE;--txt2:#8892AA;--txt3:#4A5268;
+  --c1:#00C896;--c2:#6C63FF;--c3:#F5A623;--c4:#FF6B6B;
+  --teal:#00C896;--purple:#6C63FF;--amber:#F5A623;--coral:#FF6B6B;--blue:#4A9EFF;
+  --mono:'JetBrains Mono',monospace;--sans:'Sora',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:13px;line-height:1.6;min-height:100vh;}
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:50;background:rgba(7,9,14,0.95);backdrop-filter:blur(10px);}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{background:linear-gradient(135deg,var(--teal),var(--purple));width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;color:#fff;}
+.nav-name{font-size:14px;font-weight:600;letter-spacing:-0.3px;}
+.nav-sub{font-family:var(--mono);font-size:10px;color:var(--txt3);margin-left:8px;padding-left:8px;border-left:1px solid var(--b2);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-tag{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:20px;border:1px solid var(--b2);color:var(--txt3);}
+.nav-tag.live{border-color:rgba(0,200,150,0.3);color:var(--teal);background:rgba(0,200,150,0.06);}
+/* ── HERO ── */
+.hero{padding:40px 24px 28px;border-bottom:1px solid var(--b);}
+.hero-eyebrow{font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+.hero h1{font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-0.5px;margin-bottom:8px;}
+.hero h1 span{background:linear-gradient(90deg,var(--teal),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero p{color:var(--txt2);font-size:13px;max-width:520px;line-height:1.7;}
+.hero-stats{display:flex;gap:24px;margin-top:16px;}
+.hstat{font-family:var(--mono);font-size:11px;color:var(--txt3);}
+.hstat b{color:var(--txt2);font-weight:400;}
+/* ── PHASE SECTION ── */
+.phase{padding:22px 24px 0;}
+.phase-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.phase-dot{width:8px;height:8px;border-radius:50%;}
+.phase-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;}
+.phase-line{flex:1;height:1px;background:var(--b);}
+.phase-count{font-family:var(--mono);font-size:10px;color:var(--txt3);}
+/* ── CARDS GRID ── */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 24px 24px;}
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:11px;padding:16px;cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity 0.18s;}
+.card:hover{border-color:var(--b2);transform:translateY(-1px);}
+.card:hover::before{opacity:1;}
+.card[data-phase="1"]::before{background:var(--teal);}
+.card[data-phase="2"]::before{background:var(--purple);}
+.card[data-phase="3"]::before{background:var(--amber);}
+.card[data-phase="4"]::before{background:var(--coral);}
+.card[data-phase="1"]{border-left:2px solid rgba(0,200,150,0.25);}
+.card[data-phase="2"]{border-left:2px solid rgba(108,99,255,0.25);}
+.card[data-phase="3"]{border-left:2px solid rgba(245,166,35,0.25);}
+.card[data-phase="4"]{border-left:2px solid rgba(255,107,107,0.25);}
+.card:hover[data-phase="1"]{border-color:rgba(0,200,150,0.35);}
+.card:hover[data-phase="2"]{border-color:rgba(108,99,255,0.35);}
+.card:hover[data-phase="3"]{border-color:rgba(245,166,35,0.35);}
+.card:hover[data-phase="4"]{border-color:rgba(255,107,107,0.35);}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.card-icon{width:32px;height:32px;border-radius:8px;background:var(--bg3);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.card-badge{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 7px;border-radius:10px;letter-spacing:0.05em;text-transform:uppercase;}
+.b-ready{background:rgba(0,200,150,0.08);color:var(--teal);border:1px solid rgba(0,200,150,0.18);}
+.card-title{font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.3;}
+.card-desc{font-size:11.5px;color:var(--txt2);line-height:1.65;margin-bottom:10px;}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.ct{font-family:var(--mono);font-size:9px;color:var(--txt3);background:rgba(255,255,255,0.02);border:1px solid var(--b);padding:2px 6px;border-radius:3px;}
+.card-foot{padding-top:10px;border-top:1px solid var(--b);font-size:11.5px;font-weight:500;}
+.card[data-phase="1"] .card-foot{color:var(--teal);}
+.card[data-phase="2"] .card-foot{color:var(--purple);}
+.card[data-phase="3"] .card-foot{color:var(--amber);}
+.card[data-phase="4"] .card-foot{color:var(--coral);}
+/* ── OVERLAY ── */
+.ov{display:none;position:fixed;inset:0;z-index:200;}
+.ov.open{display:flex;}
+.ov-bg{position:absolute;inset:0;background:rgba(4,5,9,0.8);backdrop-filter:blur(6px);}
+.panel{position:absolute;right:0;top:0;bottom:0;width:720px;background:var(--bg);border-left:1px solid var(--b2);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.36s cubic-bezier(0.22,0.58,0.36,1);}
+.ov.open .panel{transform:translateX(0);}
+.ph{padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ph-left{display:flex;align-items:center;gap:10px;}
+.ph-icon{width:30px;height:30px;border-radius:7px;border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:13px;}
+.ph-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:1px;}
+.ph-title{font-size:14px;font-weight:600;}
+.bclose{width:28px;height:28px;border:1px solid var(--b);background:transparent;color:var(--txt2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.12s;}
+.bclose:hover{border-color:var(--b2);color:var(--txt);}
+/* ── STEP BAR ── */
+.sbar{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid var(--b);flex-shrink:0;gap:0;}
+.st{display:flex;align-items:center;gap:6px;flex:1;}
+.st-dot{width:18px;height:18px;border-radius:50%;border:1px solid var(--b2);font-family:var(--mono);font-size:9px;display:flex;align-items:center;justify-content:center;color:var(--txt3);background:var(--bg2);flex-shrink:0;transition:all 0.22s;}
+.st-lbl{font-family:var(--mono);font-size:10px;color:var(--txt3);transition:color 0.2s;}
+.st-sep{height:1px;flex:0 0 20px;background:var(--b);}
+.st.done .st-dot{background:var(--ac);border-color:var(--ac);color:#07090E;}
+.st.active .st-dot{border-color:var(--ac);color:var(--ac);box-shadow:0 0 0 3px rgba(0,200,150,0.1);}
+.st.done .st-lbl,.st.active .st-lbl{color:var(--txt2);}
+/* ── PANEL BODY ── */
+.pb{flex:1;overflow-y:auto;padding:20px;}
+.pb::-webkit-scrollbar{width:3px;}
+.pb::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+.pf{padding:12px 20px;border-top:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+/* ── FORMS ── */
+.fg{margin-bottom:13px;}
+.fl{font-family:var(--mono);font-size:9px;color:var(--txt3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;display:block;}
+.fi{width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--b);border-radius:7px;color:var(--txt);font-size:12px;font-family:var(--sans);outline:none;transition:border-color 0.13s;}
+.fi:focus{border-color:rgba(0,200,150,0.3);}
+.fi::placeholder{color:var(--txt3);}
+.fi select,.fi option{background:var(--bg2);}
+select.fi{cursor:pointer;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.fhint{font-size:10px;color:var(--txt3);margin-top:3px;font-family:var(--mono);}
+/* ── BUTTONS ── */
+.btn{padding:8px 15px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all 0.14s;display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);}
+.btn-p{background:var(--ac);color:#07090E;}
+.btn-p:hover{opacity:0.88;transform:translateY(-1px);}
+.btn-p:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
+.btn-g{background:transparent;color:var(--txt2);border:1px solid var(--b);}
+.btn-g:hover{border-color:var(--b2);color:var(--txt);}
+.btn-o{background:transparent;color:var(--ac);border:1px solid rgba(0,200,150,0.2);}
+.btn-o:hover{background:rgba(0,200,150,0.06);}
+/* ── STATUS ── */
+.info{background:rgba(108,99,255,0.06);border:1px solid rgba(108,99,255,0.15);border-radius:7px;padding:9px 12px;font-size:11.5px;color:var(--txt2);margin-bottom:12px;line-height:1.65;}
+.info b{color:#9B96FF;}
+.ok{background:rgba(0,200,150,0.05);border:1px solid rgba(0,200,150,0.18);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--teal);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.err{background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.15);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--coral);margin-bottom:12px;}
+/* ── PROGRESS ── */
+.plist{display:flex;flex-direction:column;gap:0;margin:14px 0;}
+.pi{display:flex;align-items:flex-start;gap:11px;padding:8px 0;position:relative;}
+.pi:not(:last-child)::after{content:'';position:absolute;left:9px;top:30px;bottom:0;width:1px;background:var(--b);}
+.pdot{width:20px;height:20px;border-radius:50%;border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:9px;background:var(--bg2);flex-shrink:0;z-index:1;position:relative;transition:all 0.25s;}
+.pi.running .pdot{border-color:var(--ac);}
+.pi.running .pdot::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid transparent;border-top-color:var(--ac);animation:spin 0.85s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pi.done .pdot{background:var(--ac);border-color:var(--ac);color:#07090E;font-weight:600;}
+.pi.pending .pdot{opacity:0.2;}
+.plbl{font-size:12px;color:var(--txt3);padding-top:2px;transition:color 0.18s;}
+.pi.running .plbl{color:var(--txt);}
+.pi.done .plbl{color:var(--teal);}
+.psub{font-size:10px;color:var(--txt3);font-family:var(--mono);}
+/* ── RESULT COMPONENTS ── */
+.rsec{margin-bottom:20px;}
+.rshdr{font-family:var(--mono);font-size:9px;color:var(--txt3);letter-spacing:0.09em;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--b);}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
+.scard{background:var(--bg2);border:1px solid var(--b);border-radius:7px;padding:10px 11px;text-align:center;}
+.sval{font-size:22px;font-family:var(--mono);font-weight:500;line-height:1;margin-bottom:2px;}
+.slbl{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono);}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.tbl th{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:0.07em;padding:7px 10px;text-align:left;border-bottom:1px solid var(--b);background:var(--bg2);}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--b);color:var(--txt2);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(255,255,255,0.01);}
+.pill{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 7px;border-radius:3px;display:inline-block;}
+.p-ok{background:rgba(0,200,150,0.1);color:var(--teal);}
+.p-warn{background:rgba(245,166,35,0.1);color:var(--amber);}
+.p-err{background:rgba(255,107,107,0.1);color:var(--coral);}
+.p-info{background:rgba(108,99,255,0.1);color:#9B96FF;}
+.p-hi{background:rgba(255,107,107,0.08);color:var(--coral);}
+.p-med{background:rgba(245,166,35,0.08);color:var(--amber);}
+.p-lo{background:rgba(0,200,150,0.08);color:var(--teal);}
+.codeblock{background:var(--bg3);border:1px solid var(--b);border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:10.5px;color:#A8B5CC;line-height:1.7;overflow-x:auto;white-space:pre;margin-bottom:8px;}
+.kw{color:#6C63FF;}.str{color:#00C896;}.cm{color:#4A5268;}.fn{color:#F5A623;}.num{color:#FF6B6B;}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--b);margin-bottom:12px;}
+.tab{padding:7px 14px;font-family:var(--mono);font-size:10px;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+.tab.on{color:var(--ac);border-color:var(--ac);}
+.row-card{background:var(--bg2);border:1px solid var(--b);border-radius:8px;padding:11px 13px;margin-bottom:7px;}
+.row-card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;}
+.lbar{width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:8px;}
+.lbar-ok{background:var(--teal);}
+.lbar-warn{background:var(--amber);}
+.lbar-err{background:var(--coral);}
+.expbtn{font-family:var(--mono);font-size:9px;color:var(--ac);background:rgba(0,200,150,0.06);border:1px solid rgba(0,200,150,0.15);padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.12s;}
+.expbtn:hover{background:rgba(0,200,150,0.12);}
+.jira-ok{display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(0,200,150,0.05);border:1px solid rgba(0,200,150,0.18);border-radius:7px;margin-bottom:12px;font-size:11.5px;color:var(--teal);}
+/* LDOTS */
+.ld{display:inline-flex;gap:3px;}
+.ld span{width:4px;height:4px;border-radius:50%;background:var(--ac);animation:db 1.1s ease-in-out infinite;}
+.ld span:nth-child(2){animation-delay:.2s;}
+.ld span:nth-child(3){animation-delay:.4s;}
+@keyframes db{0%,80%,100%{opacity:.15;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+@keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeup 0.22s ease both;}
+/* agent color accent helpers */
+.ac-teal{--ac:var(--teal);}
+.ac-purple{--ac:var(--purple);}
+.ac-amber{--ac:var(--amber);}
+.ac-coral{--ac:var(--coral);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">DF</div>
+    <span class="nav-name">DataForge</span>
+    <span class="nav-sub">AI Data Engineering Platform</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-tag live">● 11 agents active</span>
+    <span class="nav-tag">LangGraph · dbt · Spark</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Data Engineering Agent Platform · PoC v0.1</div>
+  <h1>Intelligence at every layer<br>of your <span>data platform</span></h1>
+  <p>Eleven specialized agents covering discovery, modelling, pipeline engineering, quality, lineage, monitoring, and cost — each connected to your existing toolchain.</p>
+  <div class="hero-stats">
+    <span class="hstat"><b>4</b> phases</span>
+    <span class="hstat"><b>11</b> agents</span>
+    <span class="hstat"><b>Azure OpenAI</b> · Claude backbone</span>
+    <span class="hstat"><b>Snowflake · Databricks · dbt</b> integrations</span>
+  </div>
+</div>
+
+<!-- PHASE 1 -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-dot" style="background:var(--teal)"></div>
+    <span class="phase-label" style="color:var(--teal)">Phase 1 — Discover &amp; Model</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">3 agents</span>
+  </div>
+</div>
+<div class="cards">
+  <div class="card" data-phase="1" onclick="openAgent('discovery')">
+    <div class="card-head"><div class="card-icon">🔍</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Data discovery &amp; profiling</div>
+    <div class="card-desc">Crawls source systems, profiles every column — nulls, cardinality, distributions, PII detection — and writes catalogue entries automatically.</div>
+    <div class="card-tags"><span class="ct">OpenMetadata</span><span class="ct">Great Expectations</span><span class="ct">Snowflake</span><span class="ct">Postgres</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="1" onclick="openAgent('modelling')">
+    <div class="card-head"><div class="card-icon">📐</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Data modelling</div>
+    <div class="card-desc">Designs star / snowflake / Data Vault models from requirements, generates dbt model files, YAML docs, SCD strategy, and grain definitions.</div>
+    <div class="card-tags"><span class="ct">dbt</span><span class="ct">Kimball</span><span class="ct">Data Vault 2.0</span><span class="ct">BigQuery</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="1" onclick="openAgent('governance')">
+    <div class="card-head"><div class="card-icon">🏛️</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Governance &amp; catalogue</div>
+    <div class="card-desc">Auto-classifies PII, tags sensitivity, writes business glossary entries, enforces access policies, syncs catalogue as schemas evolve.</div>
+    <div class="card-tags"><span class="ct">Collibra</span><span class="ct">Apache Atlas</span><span class="ct">Unity Catalog</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-dot" style="background:var(--purple)"></div>
+    <span class="phase-label" style="color:var(--purple)">Phase 2 — Build &amp; Ingest</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">3 agents</span>
+  </div>
+</div>
+<div class="cards">
+  <div class="card" data-phase="2" onclick="openAgent('pipeline-design')">
+    <div class="card-head"><div class="card-icon">🗺️</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Pipeline design</div>
+    <div class="card-desc">Chooses ingestion pattern (CDC, micro-batch, streaming), designs Airflow DAG topology with retry logic and SLA gates, writes the ADR.</div>
+    <div class="card-tags"><span class="ct">Airflow</span><span class="ct">Prefect</span><span class="ct">Debezium</span><span class="ct">Kafka Connect</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="2" onclick="openAgent('etl-codegen')">
+    <div class="card-head"><div class="card-icon">⚙️</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">ETL / ELT code generation</div>
+    <div class="card-desc">Generates PySpark jobs, dbt SQL transformations, Airflow operators, and pytest unit tests from source-to-target mappings and pipeline spec.</div>
+    <div class="card-tags"><span class="ct">PySpark</span><span class="ct">dbt SQL</span><span class="ct">Delta Lake</span><span class="ct">Pytest</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="2" onclick="openAgent('streaming')">
+    <div class="card-head"><div class="card-icon">⚡</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Streaming pipeline</div>
+    <div class="card-desc">Designs Kafka topologies, generates Flink / Spark Streaming jobs with windowing, watermarks, and exactly-once semantics.</div>
+    <div class="card-tags"><span class="ct">Apache Kafka</span><span class="ct">Apache Flink</span><span class="ct">Spark Streaming</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-dot" style="background:var(--amber)"></div>
+    <span class="phase-label" style="color:var(--amber)">Phase 3 — Validate &amp; Optimise</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">2 agents</span>
+  </div>
+</div>
+<div class="cards" style="grid-template-columns:1fr 1fr;">
+  <div class="card" data-phase="3" onclick="openAgent('dq')">
+    <div class="card-head"><div class="card-icon">✅</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Data quality</div>
+    <div class="card-desc">Infers DQ rules from profiles and business definitions, generates Great Expectations / dbt test suites, runs CI checks, detects anomalies using statistical baselines, and raises incidents automatically.</div>
+    <div class="card-tags"><span class="ct">Great Expectations</span><span class="ct">dbt tests</span><span class="ct">Monte Carlo</span><span class="ct">Soda</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="3" onclick="openAgent('query-opt')">
+    <div class="card-head"><div class="card-icon">🚀</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Query optimisation</div>
+    <div class="card-desc">Reads execution plans and slow query logs, identifies anti-patterns (missing partitions, cross joins, correlated subqueries), rewrites SQL with explanations, recommends indexes and clustering keys.</div>
+    <div class="card-tags"><span class="ct">Snowflake</span><span class="ct">BigQuery</span><span class="ct">Spark UI</span><span class="ct">Postgres EXPLAIN</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-dot" style="background:var(--coral)"></div>
+    <span class="phase-label" style="color:var(--coral)">Phase 4 — Operate &amp; Observe</span>
+    <div class="phase-line"></div>
+    <span class="phase-count">3 agents</span>
+  </div>
+</div>
+<div class="cards">
+  <div class="card" data-phase="4" onclick="openAgent('lineage')">
+    <div class="card-head"><div class="card-icon">🕸️</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Lineage &amp; impact analysis</div>
+    <div class="card-desc">Traces column-level lineage across pipelines, computes blast radius of schema changes, generates impact reports for consumers and migration checklists.</div>
+    <div class="card-tags"><span class="ct">OpenLineage</span><span class="ct">Marquez</span><span class="ct">dbt lineage</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="4" onclick="openAgent('monitoring')">
+    <div class="card-head"><div class="card-icon">📡</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">Pipeline monitoring &amp; incident</div>
+    <div class="card-desc">Watches Airflow / Prefect task states, detects SLA misses, reads Spark logs for RCA, auto-retries or escalates, files Jira incidents with full diagnostic context.</div>
+    <div class="card-tags"><span class="ct">Airflow REST API</span><span class="ct">Datadog</span><span class="ct">PagerDuty</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+  <div class="card" data-phase="4" onclick="openAgent('cost')">
+    <div class="card-head"><div class="card-icon">💰</div><span class="card-badge b-ready">Ready</span></div>
+    <div class="card-title">DataOps cost optimisation</div>
+    <div class="card-desc">Attributes warehouse spend per team and workload, flags idle clusters and costly queries, unused tables, and produces a ranked optimisation report with specific actions.</div>
+    <div class="card-tags"><span class="ct">Snowflake ACCOUNT_USAGE</span><span class="ct">BigQuery BI Engine</span><span class="ct">Databricks</span></div>
+    <div class="card-foot">▶ Launch agent →</div>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="ov" id="ov">
+  <div class="ov-bg" onclick="closeAgent()"></div>
+  <div class="panel" id="panel">
+    <div class="ph" id="ph">
+      <div class="ph-left">
+        <div class="ph-icon" id="ph-icon"></div>
+        <div><div class="ph-eyebrow" id="ph-eyebrow"></div><div class="ph-title" id="ph-title"></div></div>
+      </div>
+      <button class="bclose" onclick="closeAgent()">✕</button>
+    </div>
+    <div class="sbar" id="sbar"></div>
+    <div class="pb" id="pb"></div>
+    <div class="pf" id="pf"></div>
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────
+// AGENT REGISTRY
+// ────────────────────────────────────────────────────────
+const AGENTS = {
+  'discovery':{icon:'🔍',phase:1,color:'teal',title:'Data discovery & profiling agent',steps:['Connect source','Profile & scan','Catalogue report'],eyebrow:'Phase 1 · Discover & Model'},
+  'modelling':{icon:'📐',phase:1,color:'teal',title:'Data modelling agent',steps:['Requirements','Design model','Generate dbt'],eyebrow:'Phase 1 · Discover & Model'},
+  'governance':{icon:'🏛️',phase:1,color:'teal',title:'Governance & catalogue agent',steps:['Select dataset','Classify & tag','Catalogue entry'],eyebrow:'Phase 1 · Discover & Model'},
+  'pipeline-design':{icon:'🗺️',phase:2,color:'purple',title:'Pipeline design agent',steps:['Configure source/target','Design pattern','ADR & DAG'],eyebrow:'Phase 2 · Build & Ingest'},
+  'etl-codegen':{icon:'⚙️',phase:2,color:'purple',title:'ETL / ELT code generation agent',steps:['Source-target mapping','Generate code','Review artifacts'],eyebrow:'Phase 2 · Build & Ingest'},
+  'streaming':{icon:'⚡',phase:2,color:'purple',title:'Streaming pipeline agent',steps:['Stream config','Generate topology','Flink job code'],eyebrow:'Phase 2 · Build & Ingest'},
+  'dq':{icon:'✅',phase:3,color:'amber',title:'Data quality agent',steps:['Select dataset','Run DQ suite','Quality report'],eyebrow:'Phase 3 · Validate & Optimise'},
+  'query-opt':{icon:'🚀',phase:3,color:'amber',title:'Query optimisation agent',steps:['Paste slow query','Analyse plan','Optimised SQL'],eyebrow:'Phase 3 · Validate & Optimise'},
+  'lineage':{icon:'🕸️',phase:4,color:'coral',title:'Lineage & impact analysis agent',steps:['Select asset','Trace lineage','Impact report'],eyebrow:'Phase 4 · Operate & Observe'},
+  'monitoring':{icon:'📡',phase:4,color:'coral',title:'Pipeline monitoring agent',steps:['Select DAG','Health scan','Incident report'],eyebrow:'Phase 4 · Operate & Observe'},
+  'cost':{icon:'💰',phase:4,color:'coral',title:'DataOps cost optimisation agent',steps:['Connect warehouse','Analyse spend','Savings report'],eyebrow:'Phase 4 · Operate & Observe'},
+};
+
+let current = null, step = 1;
+
+function acClass(c){return `ac-${c}`;}
+function phColor(c){const m={teal:'var(--teal)',purple:'var(--purple)',amber:'var(--amber)',coral:'var(--coral)'};return m[c]||'var(--teal)';}
+
+function openAgent(id){
+  current = id;
+  step = 1;
+  const a = AGENTS[id];
+  document.getElementById('ph-icon').textContent = a.icon;
+  document.getElementById('ph-eyebrow').textContent = a.eyebrow;
+  document.getElementById('ph-eyebrow').style.color = phColor(a.color);
+  document.getElementById('ph-title').textContent = a.title;
+  document.getElementById('panel').className = `panel ${acClass(a.color)}`;
+  document.getElementById('ov').classList.add('open');
+  renderStep(1);
+}
+function closeAgent(){
+  document.getElementById('ov').classList.remove('open');
+  setTimeout(()=>{current=null;step=1;},380);
+}
+
+function renderStepBar(n){
+  const a = AGENTS[current];
+  const html = a.steps.map((s,i)=>{
+    const idx=i+1;
+    const cls = idx<n?'done':idx===n?'active':'pending';
+    const dot = idx<n?'✓':idx;
+    return `<div class="st ${cls}"><div class="st-dot">${dot}</div><span class="st-lbl">${s}</span></div>${i<a.steps.length-1?'<div class="st-sep"></div>':''}`;
+  }).join('');
+  document.getElementById('sbar').innerHTML = html;
+}
+
+function renderStep(n){
+  step = n;
+  renderStepBar(n);
+  const renders = {
+    'discovery':[s1_discovery, s2_discovery, s3_discovery],
+    'modelling':[s1_modelling, s2_modelling, s3_modelling],
+    'governance':[s1_governance, s2_governance, s3_governance],
+    'pipeline-design':[s1_pipelinedesign, s2_pipelinedesign, s3_pipelinedesign],
+    'etl-codegen':[s1_etl, s2_etl, s3_etl],
+    'streaming':[s1_streaming, s2_streaming, s3_streaming],
+    'dq':[s1_dq, s2_dq, s3_dq],
+    'query-opt':[s1_queryopt, s2_queryopt, s3_queryopt],
+    'lineage':[s1_lineage, s2_lineage, s3_lineage],
+    'monitoring':[s1_monitoring, s2_monitoring, s3_monitoring],
+    'cost':[s1_cost, s2_cost, s3_cost],
+  };
+  renders[current][n-1]();
+}
+
+function go(n){renderStep(n);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function runProgress(steps, onDone){
+  document.getElementById('pf').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">Agent running…</span><span class="ld"><span></span><span></span><span></span></span>`;
+  const delays = steps.map(()=>700+Math.random()*600);
+  async function animate(){
+    for(let i=0;i<steps.length;i++){
+      document.querySelectorAll('.pi').forEach((el,j)=>{
+        el.className='pi '+(j<i?'done':j===i?'running':'pending');
+        if(j<i)el.querySelector('.pdot').textContent='✓';
+        else el.querySelector('.pdot').textContent=j+1;
+      });
+      await sleep(delays[i]);
+    }
+    document.querySelectorAll('.pi').forEach(el=>{el.className='pi done';el.querySelector('.pdot').textContent='✓';});
+    await sleep(400);
+    onDone();
+  }
+  animate();
+}
+
+function progHtml(steps){
+  return `<div class="plist">${steps.map((s,i)=>`<div class="pi ${i===0?'running':'pending'}" ><div class="pdot">${i+1}</div><div><div class="plbl">${s.l}</div><div class="psub">${s.s}</div></div></div>`).join('')}</div>`;
+}
+
+function ftr(back, nextLabel, nextFn){
+  const backHtml = back>0?`<button class="btn btn-g" onclick="go(${back})">← Back</button>`:`<span></span>`;
+  document.getElementById('pf').innerHTML = `${backHtml}<button class="btn btn-p" onclick="${nextFn}">${nextLabel}</button>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 1: DATA DISCOVERY
+// ═══════════════════════════════════════════════
+function s1_discovery(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="info"><b>PoC Mode:</b> connects to mock Snowflake schema. In production uses JDBC / SQLAlchemy connectors with read-only service account credentials.</div>
+    <div class="fg"><label class="fl">Source platform</label><select class="fi"><option>Snowflake</option><option>Postgres</option><option>BigQuery</option><option>Azure SQL</option></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Account / Host</label><input class="fi" value="telecom-prod.snowflakecomputing.com"></div>
+      <div class="fg"><label class="fl">Database</label><input class="fi" value="TELECOM_DW"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Schema filter (regex)</label><input class="fi" value="^(BSS|OSS|CRM).*"></div>
+      <div class="fg"><label class="fl">Max tables to profile</label><input class="fi" value="50"></div>
+    </div>
+    <div class="fg"><label class="fl">PII detection</label><select class="fi"><option>Presidio NER (recommended)</option><option>Regex patterns only</option><option>Disabled</option></select></div>
+    <div class="fg"><label class="fl">Catalogue target</label><select class="fi"><option>OpenMetadata</option><option>Collibra</option><option>AWS Glue Catalog</option></select></div>
+  </div>`;
+  ftr(0,'Start profiling →','s2_discovery()');
+}
+function s2_discovery(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Connected — found 3 schemas, 47 tables</div>
+    ${progHtml([
+      {l:'Crawling schema metadata',s:'INFORMATION_SCHEMA · table stats · row counts'},
+      {l:'Sampling column distributions',s:'Min / max / mean / stddev per numeric column'},
+      {l:'Computing cardinality & null rates',s:'Distinct value counts · null percentage per column'},
+      {l:'Running PII scanner (Presidio)',s:'Name, phone, email, MSISDN, IMSI pattern detection'},
+      {l:'Calculating data quality scores',s:'Completeness · uniqueness · consistency · validity'},
+      {l:'Writing catalogue entries',s:'Pushing metadata to OpenMetadata API'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5,6],()=>renderStep(3));
+}
+function s3_discovery(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="jira-ok">✓ 47 tables profiled · 312 columns scanned · OpenMetadata updated</div>
+    <div class="rsec">
+      <div class="rshdr">Summary</div>
+      <div class="sgrid">
+        <div class="scard"><div class="sval" style="color:var(--teal)">47</div><div class="slbl">Tables</div></div>
+        <div class="scard"><div class="sval" style="color:var(--purple)">312</div><div class="slbl">Columns</div></div>
+        <div class="scard"><div class="sval" style="color:var(--amber)">23</div><div class="slbl">PII columns</div></div>
+        <div class="scard"><div class="sval" style="color:var(--teal)">87%</div><div class="slbl">Avg DQ score</div></div>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Column profile sample — BSS.SUBSCRIBER</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Column</th><th>Type</th><th>Null %</th><th>Cardinality</th><th>PII</th><th>DQ Score</th></tr>
+          <tr><td style="color:var(--txt)">MSISDN</td><td>VARCHAR(15)</td><td>0.0%</td><td>2.4M unique</td><td><span class="pill p-err">PHONE</span></td><td><span class="pill p-ok">98</span></td></tr>
+          <tr><td style="color:var(--txt)">FULL_NAME</td><td>VARCHAR(100)</td><td>1.2%</td><td>High</td><td><span class="pill p-err">NAME</span></td><td><span class="pill p-warn">82</span></td></tr>
+          <tr><td style="color:var(--txt)">PLAN_CODE</td><td>VARCHAR(20)</td><td>0.0%</td><td>47 distinct</td><td><span class="pill p-info">None</span></td><td><span class="pill p-ok">99</span></td></tr>
+          <tr><td style="color:var(--txt)">ACTIVATION_DT</td><td>TIMESTAMP_NTZ</td><td>0.4%</td><td>Range: 2018-2024</td><td><span class="pill p-info">None</span></td><td><span class="pill p-ok">96</span></td></tr>
+          <tr><td style="color:var(--txt)">CHURN_SCORE</td><td>FLOAT</td><td>8.3%</td><td>0.00 – 1.00</td><td><span class="pill p-info">None</span></td><td><span class="pill p-warn">79</span></td></tr>
+          <tr><td style="color:var(--txt)">HOME_ADDRESS</td><td>VARCHAR(200)</td><td>12.1%</td><td>High</td><td><span class="pill p-err">ADDRESS</span></td><td><span class="pill p-err">61</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Alerts</div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-err"></div><div><div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">23 PII columns without masking policy</div><div style="font-size:11px;color:var(--txt3)">Tables: SUBSCRIBER, BILLING_ACCOUNT, CRM_CONTACT — requires Snowflake Dynamic Data Masking before BI access</div></div></div></div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-warn"></div><div><div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">4 tables with >10% null rate on key columns</div><div style="font-size:11px;color:var(--txt3)">HOME_ADDRESS (12.1%), IMSI (11.4%), ROAMING_PROFILE (18.9%), CREDIT_SCORE (22.3%)</div></div></div></div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Export CSV</button><button class="expbtn">Push to OpenMetadata</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 2: DATA MODELLING
+// ═══════════════════════════════════════════════
+function s1_modelling(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Business requirement</label><textarea class="fi" rows="3" style="resize:none">We need a 360° subscriber analytics model joining BSS billing events, CRM interactions, network usage CDRs, and plan information to support churn prediction and ARPU analysis.</textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Source tables available</label><input class="fi" value="BSS.SUBSCRIBER, BSS.BILLING_EVENT, CRM.INTERACTION, OSS.CDR, REF.PLAN"></div>
+      <div class="fg"><label class="fl">Target platform</label><select class="fi"><option>Snowflake</option><option>BigQuery</option><option>Databricks</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Modelling approach</label><select class="fi"><option>Auto-select (recommended)</option><option>Kimball star schema</option><option>Data Vault 2.0</option><option>Wide OBT</option></select></div>
+      <div class="fg"><label class="fl">Primary query pattern</label><select class="fi"><option>Aggregation / OLAP</option><option>Point lookups</option><option>ML feature store</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">dbt project path</label><input class="fi" value="telecom_dw/models/marts/subscriber"></div>
+  </div>`;
+  ftr(0,'Design model →','s2_modelling()');
+}
+function s2_modelling(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Source schemas analysed — 5 tables, 87 columns</div>
+    ${progHtml([
+      {l:'Analysing source schema relationships',s:'Foreign key inference · join path discovery'},
+      {l:'Selecting modelling approach',s:'Query pattern = aggregation → Kimball star schema chosen'},
+      {l:'Designing fact and dimension tables',s:'Grain analysis · SCD type assignment per dimension'},
+      {l:'Generating dbt staging models',s:'Type casting · deduplication · source freshness tests'},
+      {l:'Generating dbt mart models',s:'Fact table · 4 dimension tables · YAML schema docs'},
+      {l:'Writing model documentation',s:'Column descriptions · accepted values · business definitions'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5,6],()=>renderStep(3));
+}
+function s3_modelling(){
+  const stgCode=`<span class="cm">-- models/staging/stg_subscribers.sql</span>
+<span class="kw">WITH</span> source <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> * <span class="kw">FROM</span> {{ source(<span class="str">'bss'</span>, <span class="str">'subscriber'</span>) }}
+),
+renamed <span class="kw">AS</span> (
+  <span class="kw">SELECT</span>
+    msisdn                                    <span class="kw">AS</span> subscriber_key,
+    full_name                                 <span class="kw">AS</span> subscriber_name,
+    plan_code,
+    <span class="fn">CAST</span>(activation_dt <span class="kw">AS</span> DATE)             <span class="kw">AS</span> activation_date,
+    <span class="fn">COALESCE</span>(churn_score, <span class="num">0.0</span>)               <span class="kw">AS</span> churn_score,
+    <span class="fn">ROW_NUMBER</span>() <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> msisdn
+      <span class="kw">ORDER BY</span> updated_at <span class="kw">DESC</span>)              <span class="kw">AS</span> rn
+  <span class="kw">FROM</span> source
+)
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> renamed <span class="kw">WHERE</span> rn = <span class="num">1</span>`;
+
+  const factCode=`<span class="cm">-- models/marts/fct_billing_events.sql</span>
+<span class="kw">SELECT</span>
+  {{ <span class="fn">dbt_utils.generate_surrogate_key</span>([<span class="str">'event_id'</span>]) }} <span class="kw">AS</span> billing_event_sk,
+  s.subscriber_sk,
+  p.plan_sk,
+  d.date_sk,
+  be.amount_usd,
+  be.event_type,
+  be.invoice_no
+<span class="kw">FROM</span> {{ ref(<span class="str">'stg_billing_events'</span>) }} be
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'dim_subscriber'</span>) }}  s  <span class="kw">USING</span> (subscriber_key)
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'dim_plan'</span>) }}         p  <span class="kw">USING</span> (plan_code)
+<span class="kw">LEFT JOIN</span> {{ ref(<span class="str">'dim_date'</span>) }}         d  <span class="kw">ON</span> be.event_date = d.date_day`;
+
+  let activeTab='stg';
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="jira-ok">✓ Star schema designed — 1 fact, 4 dimensions, 6 staging models</div>
+    <div class="rsec">
+      <div class="rshdr">Model inventory</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Model</th><th>Layer</th><th>Grain</th><th>SCD</th><th>Row est.</th></tr>
+          <tr><td style="color:var(--teal)">fct_billing_events</td><td>Mart</td><td>One row per billing event</td><td>—</td><td>18M/yr</td></tr>
+          <tr><td style="color:var(--teal)">dim_subscriber</td><td>Mart</td><td>One row per subscriber</td><td>Type 2</td><td>2.4M</td></tr>
+          <tr><td style="color:var(--teal)">dim_plan</td><td>Mart</td><td>One row per plan version</td><td>Type 1</td><td>47</td></tr>
+          <tr><td style="color:var(--teal)">dim_date</td><td>Mart</td><td>One row per calendar day</td><td>Static</td><td>3,650</td></tr>
+          <tr><td style="color:var(--txt2)">stg_subscribers</td><td>Staging</td><td>Deduplicated source</td><td>—</td><td>2.4M</td></tr>
+          <tr><td style="color:var(--txt2)">stg_billing_events</td><td>Staging</td><td>Typed source events</td><td>—</td><td>18M/yr</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Generated dbt code</div>
+      <div class="tabs"><span class="tab on" id="tab-stg" onclick="switchTab('stg')">stg_subscribers.sql</span><span class="tab" id="tab-fct" onclick="switchTab('fct')">fct_billing_events.sql</span></div>
+      <div class="codeblock" id="codepane">${stgCode}</div>
+    </div>
+  </div>`;
+
+  window.switchTab=function(t){
+    document.getElementById('tab-stg').className='tab'+(t==='stg'?' on':'');
+    document.getElementById('tab-fct').className='tab'+(t==='fct'?' on':'');
+    document.getElementById('codepane').innerHTML = t==='stg'?stgCode:factCode;
+  };
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Download dbt project</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 3: GOVERNANCE
+// ═══════════════════════════════════════════════
+function s1_governance(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Dataset to classify</label><select class="fi"><option>BSS.SUBSCRIBER (2.4M rows)</option><option>CRM.INTERACTION</option><option>OSS.CDR</option><option>REF.PLAN</option></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Classification policy</label><select class="fi"><option>Telecom Enterprise (TMForum)</option><option>GDPR + TRAI</option><option>Custom policy</option></select></div>
+      <div class="fg"><label class="fl">Catalogue target</label><select class="fi"><option>OpenMetadata</option><option>Collibra</option><option>Unity Catalog</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Glossary domain</label><input class="fi" value="Customer Management · BSS"></div>
+    <div class="fg"><label class="fl">Data owner (auto-assign)</label><input class="fi" value="data-platform-team@telecom.com"></div>
+  </div>`;
+  ftr(0,'Classify &amp; tag →','s2_governance()');
+}
+function s2_governance(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Dataset loaded — 312 columns across 8 tables in schema</div>
+    ${progHtml([
+      {l:'Scanning column names and sample values',s:'Pattern matching · semantic inference'},
+      {l:'Running PII classification engine',s:'Presidio NER · regex · ML classifier ensemble'},
+      {l:'Applying sensitivity labels',s:'Public · Internal · Confidential · Restricted'},
+      {l:'Matching to business glossary',s:'Linking columns to TMForum entity definitions'},
+      {l:'Generating access policy recommendations',s:'Row-level security · masking policy per sensitivity tier'},
+      {l:'Writing catalogue entry',s:'Pushing to OpenMetadata with full metadata payload'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5,6],()=>renderStep(3));
+}
+function s3_governance(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="jira-ok">✓ Catalogue entry created · 6 masking policies recommended · glossary linked</div>
+    <div class="rsec">
+      <div class="rshdr">Classification results — BSS.SUBSCRIBER</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Column</th><th>PII type</th><th>Sensitivity</th><th>Masking policy</th><th>Glossary term</th></tr>
+          <tr><td style="color:var(--txt)">MSISDN</td><td><span class="pill p-err">Phone number</span></td><td><span class="pill p-hi">Restricted</span></td><td>SHA256 hash</td><td>Subscriber ID</td></tr>
+          <tr><td style="color:var(--txt)">FULL_NAME</td><td><span class="pill p-err">Person name</span></td><td><span class="pill p-hi">Restricted</span></td><td>First name only</td><td>Customer Name</td></tr>
+          <tr><td style="color:var(--txt)">HOME_ADDRESS</td><td><span class="pill p-err">Address</span></td><td><span class="pill p-hi">Restricted</span></td><td>City only</td><td>Subscriber Address</td></tr>
+          <tr><td style="color:var(--txt)">PLAN_CODE</td><td><span class="pill p-info">None</span></td><td><span class="pill p-ok">Internal</span></td><td>No masking</td><td>Subscription Plan</td></tr>
+          <tr><td style="color:var(--txt)">CHURN_SCORE</td><td><span class="pill p-info">None</span></td><td><span class="pill p-med">Confidential</span></td><td>Null for BI role</td><td>Churn Probability</td></tr>
+          <tr><td style="color:var(--txt)">ACTIVATION_DT</td><td><span class="pill p-info">None</span></td><td><span class="pill p-ok">Internal</span></td><td>No masking</td><td>Activation Date</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Recommended Snowflake masking policy (generated)</div>
+      <div class="codeblock"><span class="kw">CREATE OR REPLACE</span> MASKING POLICY msisdn_mask
+  <span class="kw">AS</span> (val VARCHAR) <span class="kw">RETURNS</span> VARCHAR ->
+  <span class="kw">CASE WHEN</span> <span class="fn">CURRENT_ROLE</span>() <span class="kw">IN</span> (<span class="str">'DATA_ENGINEER_ROLE'</span>, <span class="str">'ANALYST_RESTRICTED'</span>)
+    <span class="kw">THEN</span> val
+    <span class="kw">ELSE</span> <span class="fn">SHA2</span>(val, <span class="num">256</span>)
+  <span class="kw">END</span>;
+
+<span class="kw">ALTER TABLE</span> BSS.SUBSCRIBER <span class="kw">MODIFY COLUMN</span> MSISDN
+  <span class="kw">SET MASKING POLICY</span> msisdn_mask;</div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Apply masking policies</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 4: PIPELINE DESIGN
+// ═══════════════════════════════════════════════
+function s1_pipelinedesign(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="frow">
+      <div class="fg"><label class="fl">Source system</label><select class="fi"><option>Oracle BSS (transactional)</option><option>Salesforce CRM</option><option>REST API</option><option>Kafka topic</option></select></div>
+      <div class="fg"><label class="fl">Target</label><select class="fi"><option>Snowflake (DW)</option><option>Databricks Delta Lake</option><option>BigQuery</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Latency requirement</label><select class="fi"><option>Hourly batch (SLA: 60 min)</option><option>Daily batch</option><option>Near real-time (&lt;5 min)</option><option>Real-time (&lt;30 sec)</option></select></div>
+      <div class="fg"><label class="fl">Daily change volume</label><input class="fi" value="~2M rows / 500MB"></div>
+    </div>
+    <div class="fg"><label class="fl">Source table(s)</label><input class="fi" value="BSS_OWNER.BILLING_EVENT, BSS_OWNER.SUBSCRIBER"></div>
+    <div class="fg"><label class="fl">Orchestrator</label><select class="fi"><option>Apache Airflow 2.x</option><option>Prefect 2.x</option><option>Dagster</option></select></div>
+  </div>`;
+  ftr(0,'Design pipeline →','s2_pipelinedesign()');
+}
+function s2_pipelinedesign(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Source/target analysed — Oracle transactional → Snowflake DW</div>
+    ${progHtml([
+      {l:'Analysing source change characteristics',s:'Transaction rate · table volatility · PK availability'},
+      {l:'Selecting ingestion pattern',s:'High volume + hourly SLA → Debezium CDC + micro-batch merge'},
+      {l:'Designing Airflow DAG topology',s:'Task grouping · retry strategy · SLA callback'},
+      {l:'Configuring connection pools and concurrency',s:'JDBC pool size · Snowflake warehouse sizing'},
+      {l:'Writing Architecture Decision Record',s:'Pattern rationale · alternatives considered · trade-offs'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_pipelinedesign(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="jira-ok">✓ Pattern selected: Debezium CDC → Kafka → Snowflake Merge · ADR written</div>
+    <div class="rsec">
+      <div class="rshdr">Architecture decision</div>
+      <div class="row-card">
+        <div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:6px">ADR-004: CDC micro-batch ingestion for BSS billing events</div>
+        <div style="font-size:11.5px;color:var(--txt2);line-height:1.7"><b style="color:var(--txt)">Decision:</b> Debezium 2.x (Oracle LogMiner) → Kafka topic → Snowflake Kafka connector → MERGE on target table, triggered every 15 min.<br><b style="color:var(--txt)">Rationale:</b> 2M daily rows exceeds full-load threshold (500K). Oracle LogMiner provides row-level change capture. Kafka buffers bursts. MERGE ensures idempotency.<br><b style="color:var(--txt)">Rejected:</b> JDBC timestamp-based incremental (misses deletes), Spark JDBC full-load (too slow at volume).</div>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Generated Airflow DAG skeleton</div>
+      <div class="codeblock"><span class="kw">from</span> airflow.decorators <span class="kw">import</span> dag, task
+<span class="kw">from</span> airflow.providers.snowflake.operators.snowflake <span class="kw">import</span> SnowflakeOperator
+<span class="kw">from</span> pendulum <span class="kw">import</span> datetime
+
+<span class="fn">@dag</span>(schedule=<span class="str">"*/15 * * * *"</span>, start_date=datetime(<span class="num">2024</span>,<span class="num">1</span>,<span class="num">1</span>),
+     catchup=<span class="kw">False</span>, tags=[<span class="str">"bss"</span>,<span class="str">"billing"</span>], sla_miss_callback=<span class="fn">alert_ops_team</span>)
+<span class="kw">def</span> <span class="fn">bss_billing_cdc_pipeline</span>():
+
+    check_kafka_lag = <span class="fn">KafkaLagSensor</span>(topic=<span class="str">"bss.billing_event"</span>, max_lag=<span class="num">5000</span>)
+
+    load_to_stage = <span class="fn">SnowflakeOperator</span>(task_id=<span class="str">"load_stage"</span>,
+        sql=<span class="str">"CALL sp_load_billing_stage()"</span>, snowflake_conn_id=<span class="str">"snow_prod"</span>)
+
+    merge_to_target = <span class="fn">SnowflakeOperator</span>(task_id=<span class="str">"merge_target"</span>,
+        sql=<span class="str">"CALL sp_merge_billing_events()"</span>)
+
+    run_dq_checks = <span class="fn">GreatExpectationsOperator</span>(task_id=<span class="str">"dq_checks"</span>,
+        expectation_suite_name=<span class="str">"billing_events.suite"</span>)
+
+    check_kafka_lag >> load_to_stage >> merge_to_target >> run_dq_checks
+
+<span class="fn">bss_billing_cdc_pipeline</span>()</div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Save ADR to Confluence</button><button class="expbtn">Download DAG file</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 5: ETL CODE GEN
+// ═══════════════════════════════════════════════
+function s1_etl(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Source-to-target mapping (describe or upload)</label><textarea class="fi" rows="3" style="resize:none">Source: Oracle BSS.BILLING_EVENT (event_id, msisdn, amount, event_type, ts)
+Target: Snowflake BILLING_EVENTS_FACT (billing_event_sk, subscriber_sk, amount_usd, event_type, event_date)</textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Transformation language</label><select class="fi"><option>PySpark + dbt SQL</option><option>dbt SQL only</option><option>PySpark only</option></select></div>
+      <div class="fg"><label class="fl">Target platform</label><select class="fi"><option>Databricks</option><option>Snowflake</option><option>BigQuery</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Business rules</label><input class="fi" value="Convert amount from GBP to USD (rate from REF.FX_RATE). Deduplicate on event_id. Null event_type → 'UNKNOWN'."></div>
+    <div class="fg"><label class="fl">Generate unit tests</label><select class="fi"><option>Yes — pytest with mocked DataFrames</option><option>No</option></select></div>
+  </div>`;
+  ftr(0,'Generate code →','s2_etl()');
+}
+function s2_etl(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Mapping parsed — 5 source columns → 5 target columns, 3 business rules</div>
+    ${progHtml([
+      {l:'Parsing source-to-target mapping',s:'Column typing · join key identification · null handling'},
+      {l:'Generating PySpark transformation job',s:'Schema enforcement · deduplication · FX rate join'},
+      {l:'Generating dbt SQL mart model',s:'Surrogate keys · dimension lookups · incremental config'},
+      {l:'Generating Airflow operator config',s:'SparkSubmitOperator · connection refs · retry policy'},
+      {l:'Generating pytest unit tests',s:'Happy path · null handling · duplicate records · FX edge case'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_etl(){
+  const pyCode=`<span class="kw">from</span> pyspark.sql <span class="kw">import</span> SparkSession
+<span class="kw">from</span> pyspark.sql.functions <span class="kw">import</span> col, coalesce, lit, sha2, concat_ws
+
+spark = <span class="fn">SparkSession</span>.builder.appName(<span class="str">"billing_events_transform"</span>).getOrCreate()
+
+<span class="cm"># Load source and FX reference</span>
+billing = spark.read.format(<span class="str">"jdbc"</span>).options(**ORACLE_OPTS).load()
+fx = spark.read.table(<span class="str">"ref.fx_rate"</span>).filter(col(<span class="str">"currency_pair"</span>) == <span class="str">"GBP_USD"</span>)
+
+transformed = (billing
+  .dropDuplicates([<span class="str">"event_id"</span>])
+  .join(fx.select(<span class="str">"rate"</span>), how=<span class="str">"left"</span>)
+  .withColumn(<span class="str">"amount_usd"</span>, col(<span class="str">"amount"</span>) * coalesce(col(<span class="str">"rate"</span>), lit(<span class="num">1.27</span>)))
+  .withColumn(<span class="str">"event_type"</span>, coalesce(col(<span class="str">"event_type"</span>), lit(<span class="str">"UNKNOWN"</span>)))
+  .withColumn(<span class="str">"billing_event_sk"</span>, <span class="fn">sha2</span>(<span class="fn">concat_ws</span>(<span class="str">"|"</span>, col(<span class="str">"event_id"</span>)), <span class="num">256</span>))
+  .select(<span class="str">"billing_event_sk"</span>, <span class="str">"msisdn"</span>, <span class="str">"amount_usd"</span>, <span class="str">"event_type"</span>, col(<span class="str">"ts"</span>).cast(<span class="str">"date"</span>).alias(<span class="str">"event_date"</span>))
+)
+transformed.write.format(<span class="str">"delta"</span>).mode(<span class="str">"overwrite"</span>).saveAsTable(<span class="str">"billing_events_stage"</span>)`;
+
+  const testCode=`<span class="kw">import</span> pytest
+<span class="kw">from</span> pyspark.sql <span class="kw">import</span> Row
+
+<span class="kw">def</span> <span class="fn">test_deduplication</span>(spark):
+    data = [Row(event_id=<span class="str">"E1"</span>, amount=<span class="num">10.0</span>, event_type=<span class="str">"CHARGE"</span>),
+            Row(event_id=<span class="str">"E1"</span>, amount=<span class="num">10.0</span>, event_type=<span class="str">"CHARGE"</span>)]  <span class="cm"># duplicate</span>
+    df = spark.createDataFrame(data)
+    result = <span class="fn">transform</span>(df)
+    <span class="kw">assert</span> result.count() == <span class="num">1</span>
+
+<span class="kw">def</span> <span class="fn">test_null_event_type_defaults_to_unknown</span>(spark):
+    df = spark.createDataFrame([Row(event_id=<span class="str">"E2"</span>, amount=<span class="num">5.0</span>, event_type=<span class="kw">None</span>)])
+    result = <span class="fn">transform</span>(df)
+    <span class="kw">assert</span> result.first()[<span class="str">"event_type"</span>] == <span class="str">"UNKNOWN"</span>
+
+<span class="kw">def</span> <span class="fn">test_fx_conversion_applied</span>(spark):
+    df = spark.createDataFrame([Row(event_id=<span class="str">"E3"</span>, amount=<span class="num">100.0</span>, event_type=<span class="str">"CHARGE"</span>)])
+    result = <span class="fn">transform</span>(df, fx_rate=<span class="num">1.27</span>)
+    <span class="kw">assert</span> result.first()[<span class="str">"amount_usd"</span>] == pytest.approx(<span class="num">127.0</span>, rel=<span class="num">1e-3</span>)`;
+
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="jira-ok">✓ 3 artifacts generated — PySpark job · dbt model · 5 pytest tests</div>
+    <div class="tabs"><span class="tab on" id="t1" onclick="etlTab('py')">billing_transform.py</span><span class="tab" id="t2" onclick="etlTab('test')">test_billing.py</span></div>
+    <div class="codeblock" id="etlcode">${pyCode}</div>
+    <div class="rsec">
+      <div class="rshdr">Test coverage</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Test</th><th>Scenario</th><th>Status</th></tr>
+          <tr><td style="color:var(--txt)">test_deduplication</td><td>Duplicate event_id removed</td><td><span class="pill p-ok">PASS</span></td></tr>
+          <tr><td style="color:var(--txt)">test_null_event_type</td><td>NULL → "UNKNOWN"</td><td><span class="pill p-ok">PASS</span></td></tr>
+          <tr><td style="color:var(--txt)">test_fx_conversion</td><td>GBP × rate = USD</td><td><span class="pill p-ok">PASS</span></td></tr>
+          <tr><td style="color:var(--txt)">test_missing_fx_rate</td><td>No FX row → fallback 1.27</td><td><span class="pill p-ok">PASS</span></td></tr>
+          <tr><td style="color:var(--txt)">test_schema_enforcement</td><td>Output has all required columns</td><td><span class="pill p-ok">PASS</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>`;
+  window.etlTab=function(t){
+    document.getElementById('t1').className='tab'+(t==='py'?' on':'');
+    document.getElementById('t2').className='tab'+(t==='test'?' on':'');
+    document.getElementById('etlcode').innerHTML=t==='py'?pyCode:testCode;
+  };
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Push to GitHub</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 6: STREAMING
+// ═══════════════════════════════════════════════
+function s1_streaming(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Kafka topic</label><input class="fi" value="oss.network.alarm.events"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Stream processor</label><select class="fi"><option>Apache Flink 1.18</option><option>Spark Streaming</option><option>Kafka Streams</option></select></div>
+      <div class="fg"><label class="fl">Window type</label><select class="fi"><option>Tumbling (5 min)</option><option>Sliding (10 min / 1 min step)</option><option>Session (idle 30 sec)</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Use case</label><select class="fi"><option>Network fault CEP — correlate alarm sequences into root cause</option><option>Fraud real-time scoring</option><option>CDR aggregation</option></select></div>
+    <div class="fg"><label class="fl">Output sink</label><select class="fi"><option>Kafka topic (enriched events)</option><option>Snowflake (via Kafka connector)</option><option>Elasticsearch</option></select></div>
+    <div class="fg"><label class="fl">Semantics</label><select class="fi"><option>Exactly-once</option><option>At-least-once</option></select></div>
+  </div>`;
+  ftr(0,'Generate topology →','s2_streaming()');
+}
+function s2_streaming(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Stream config validated — Flink 1.18 · exactly-once · Kafka source/sink</div>
+    ${progHtml([
+      {l:'Designing Kafka consumer topology',s:'Partition strategy · consumer group · offset management'},
+      {l:'Configuring watermark strategy',s:'BoundedOutOfOrderness(30s) · event-time semantics'},
+      {l:'Generating Flink CEP pattern',s:'Alarm sequence correlation · 5-min tumbling window'},
+      {l:'Configuring exactly-once checkpointing',s:'RocksDB state backend · checkpoint interval 60s'},
+      {l:'Generating Flink job code',s:'DataStream API · KeyedStream · CEP library'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_streaming(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="jira-ok">✓ Flink job generated · CEP pattern defined · Kafka source/sink configured</div>
+    <div class="rsec">
+      <div class="rshdr">Stream topology</div>
+      <div class="row-card">
+        <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;flex-wrap:wrap;">
+          <span style="background:rgba(0,200,150,0.08);color:var(--teal);padding:4px 10px;border-radius:5px;border:1px solid rgba(0,200,150,0.2)">Kafka: oss.network.alarm.events</span>
+          <span style="color:var(--txt3)">→</span>
+          <span style="background:rgba(108,99,255,0.08);color:#9B96FF;padding:4px 10px;border-radius:5px;border:1px solid rgba(108,99,255,0.2)">Flink source (WatermarkStrategy)</span>
+          <span style="color:var(--txt3)">→</span>
+          <span style="background:rgba(108,99,255,0.08);color:#9B96FF;padding:4px 10px;border-radius:5px;border:1px solid rgba(108,99,255,0.2)">keyBy(cellId)</span>
+          <span style="color:var(--txt3)">→</span>
+          <span style="background:rgba(245,166,35,0.08);color:var(--amber);padding:4px 10px;border-radius:5px;border:1px solid rgba(245,166,35,0.2)">CEP.pattern(alarmSequence)</span>
+          <span style="color:var(--txt3)">→</span>
+          <span style="background:rgba(0,200,150,0.08);color:var(--teal);padding:4px 10px;border-radius:5px;border:1px solid rgba(0,200,150,0.2)">Kafka: oss.fault.root_cause</span>
+        </div>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Generated Flink job (excerpt)</div>
+      <div class="codeblock"><span class="cm">// Flink CEP: correlate alarm sequences → root cause events</span>
+<span class="kw">val</span> alarmStream = env
+  .<span class="fn">fromSource</span>(kafkaSource, <span class="fn">WatermarkStrategy</span>
+    .forBoundedOutOfOrderness(<span class="fn">Duration</span>.ofSeconds(<span class="num">30</span>)), <span class="str">"Alarm Source"</span>)
+  .<span class="fn">keyBy</span>(alarm => alarm.cellId)
+
+<span class="kw">val</span> pattern = Pattern.&lt;Alarm&gt;<span class="fn">begin</span>(<span class="str">"first"</span>)
+  .where(_.alarmType == <span class="str">"LINK_DOWN"</span>)
+  .followedBy(<span class="str">"second"</span>)
+  .where(_.alarmType == <span class="str">"HIGH_BER"</span>)
+  .within(<span class="fn">Time</span>.minutes(<span class="num">5</span>))
+
+<span class="kw">val</span> rootCauses = CEP.<span class="fn">pattern</span>(alarmStream, pattern)
+  .<span class="fn">select</span> { patternMatch =>
+    <span class="kw">val</span> first = patternMatch(<span class="str">"first"</span>).head
+    RootCauseEvent(first.cellId, <span class="str">"FIBRE_DEGRADATION"</span>,
+      <span class="fn">System</span>.currentTimeMillis())
+  }
+
+rootCauses.<span class="fn">sinkTo</span>(kafkaSink)  <span class="cm">// exactly-once via 2PC</span>
+env.<span class="fn">execute</span>(<span class="str">"network-fault-cep"</span>)</div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Download Flink project</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 7: DATA QUALITY
+// ═══════════════════════════════════════════════
+function s1_dq(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Dataset</label><select class="fi"><option>Snowflake: BILLING_EVENTS_FACT</option><option>Snowflake: DIM_SUBSCRIBER</option><option>Delta: CDR_ENRICHED</option></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Rule source</label><select class="fi"><option>Auto-infer from profile + business glossary</option><option>Business rules (natural language)</option><option>Import existing GE suite</option></select></div>
+      <div class="fg"><label class="fl">DQ framework</label><select class="fi"><option>Great Expectations</option><option>dbt tests</option><option>Soda</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Business rules (optional)</label><textarea class="fi" rows="2" style="resize:none">MSISDN must be exactly 10 digits. amount_usd must be positive. event_date must not be in the future.</textarea></div>
+    <div class="fg"><label class="fl">Alert on failure</label><select class="fi"><option>Slack #data-quality + Jira ticket</option><option>PagerDuty</option><option>Email only</option></select></div>
+  </div>`;
+  ftr(0,'Run DQ suite →','s2_dq()');
+}
+function s2_dq(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Dataset connected — 18.4M rows in BILLING_EVENTS_FACT</div>
+    ${progHtml([
+      {l:'Fetching column profiles from catalogue',s:'Statistics from last discovery run'},
+      {l:'Inferring expectations from profiles',s:'Null rates · ranges · uniqueness · format patterns'},
+      {l:'Converting business rules to expectations',s:'NLP → Great Expectations expectation JSON'},
+      {l:'Running expectation suite against dataset',s:'Sampling 500K rows · statistical validation'},
+      {l:'Detecting statistical anomalies',s:'Comparing to 30-day baseline distributions'},
+      {l:'Generating incident tickets for failures',s:'Jira DQ-xxx · Slack alert with context'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5,6],()=>renderStep(3));
+}
+function s3_dq(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Suite completed · 21 expectations · 18 passed · 3 failed → 1 Jira ticket raised</div>
+    <div class="rsec">
+      <div class="rshdr">Summary</div>
+      <div class="sgrid">
+        <div class="scard"><div class="sval" style="color:var(--teal)">21</div><div class="slbl">Expectations</div></div>
+        <div class="scard"><div class="sval" style="color:var(--teal)">18</div><div class="slbl">Passed</div></div>
+        <div class="scard"><div class="sval" style="color:var(--coral)">3</div><div class="slbl">Failed</div></div>
+        <div class="scard"><div class="sval" style="color:var(--amber)">86%</div><div class="slbl">DQ score</div></div>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Expectation results</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Expectation</th><th>Column</th><th>Result</th><th>Detail</th></tr>
+          <tr><td>expect_column_values_to_not_be_null</td><td>billing_event_sk</td><td><span class="pill p-ok">PASS</span></td><td>0 nulls</td></tr>
+          <tr><td>expect_column_values_to_be_positive</td><td>amount_usd</td><td><span class="pill p-err">FAIL</span></td><td>1,247 rows ≤ 0 (0.007%)</td></tr>
+          <tr><td>expect_column_values_to_match_regex</td><td>msisdn</td><td><span class="pill p-err">FAIL</span></td><td>382 values not 10 digits</td></tr>
+          <tr><td>expect_column_values_to_not_be_in_future</td><td>event_date</td><td><span class="pill p-err">FAIL</span></td><td>14 rows event_date > today</td></tr>
+          <tr><td>expect_column_to_exist</td><td>subscriber_sk</td><td><span class="pill p-ok">PASS</span></td><td>Column present</td></tr>
+          <tr><td>expect_table_row_count_to_be_between</td><td>—</td><td><span class="pill p-ok">PASS</span></td><td>18.4M within [15M, 25M]</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Anomaly detection</div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-warn"></div><div><div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">amount_usd mean shifted +18% vs 30-day baseline</div><div style="font-size:11px;color:var(--txt3)">Today: $47.20 avg · Baseline: $40.00 avg · Possible FX rate issue in yesterday's load</div></div></div></div>
+    </div>
+    <div class="jira-ok" style="margin-top:4px">📋 Jira ticket DQ-0041 raised · assigned to data-platform-team · Slack #data-quality alerted</div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Export GE suite JSON</button><button class="expbtn">View Jira DQ-0041</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 8: QUERY OPTIMISATION
+// ═══════════════════════════════════════════════
+function s1_queryopt(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Slow query (paste SQL)</label><textarea class="fi" rows="7" style="resize:none;font-family:var(--mono);font-size:11px">SELECT s.msisdn, s.full_name, COUNT(be.billing_event_sk) as event_count,
+  SUM(be.amount_usd) as total_spend,
+  (SELECT AVG(amount_usd) FROM billing_events_fact) as global_avg
+FROM dim_subscriber s, billing_events_fact be
+WHERE s.subscriber_sk = be.subscriber_sk
+AND YEAR(be.event_date) = 2024
+GROUP BY s.msisdn, s.full_name
+ORDER BY total_spend DESC;</textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Platform</label><select class="fi"><option>Snowflake</option><option>BigQuery</option><option>Spark (explain plan text)</option></select></div>
+      <div class="fg"><label class="fl">Query duration (observed)</label><input class="fi" value="4 min 22 sec · $2.40 credits"></div>
+    </div>
+  </div>`;
+  ftr(0,'Analyse query →','s2_queryopt()');
+}
+function s2_queryopt(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Query parsed — 3 anti-patterns detected</div>
+    ${progHtml([
+      {l:'Parsing SQL AST',s:'Identifying table scans · join types · subquery structure'},
+      {l:'Fetching execution plan from Snowflake',s:'EXPLAIN output · partition pruning status · spill-to-disk'},
+      {l:'Identifying anti-patterns',s:'Implicit cross join · correlated subquery · non-sargable filter'},
+      {l:'Rewriting query with fixes',s:'ANSI JOIN · pre-aggregated CTE · partition filter push-down'},
+      {l:'Estimating cost improvement',s:'Credit model · row reduction factor · partition elimination'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_queryopt(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ 3 issues fixed · estimated 87% cost reduction · ~2.4M row scan eliminated</div>
+    <div class="rsec">
+      <div class="rshdr">Issues detected</div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-err"></div><div><div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">Implicit cross join (comma syntax)</div><div style="font-size:11px;color:var(--txt3)">Table separator comma in FROM clause creates a cross join evaluated before the WHERE filter. Replace with explicit INNER JOIN.</div></div></div></div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-err"></div><div><div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">Correlated subquery in SELECT</div><div style="font-size:11px;color:var(--txt3)">"SELECT AVG(...) FROM billing_events_fact" executes once per output row (18.4M times). Move to a CTE computed once.</div></div></div></div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-warn"></div><div><div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:2px">Non-sargable date filter</div><div style="font-size:11px;color:var(--txt3)">YEAR(event_date) = 2024 wraps the column in a function, preventing partition pruning. Rewrite as event_date BETWEEN '2024-01-01' AND '2024-12-31'.</div></div></div></div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Optimised query</div>
+      <div class="codeblock"><span class="kw">WITH</span> global_avg <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> <span class="fn">AVG</span>(amount_usd) <span class="kw">AS</span> global_avg_spend
+  <span class="kw">FROM</span> billing_events_fact
+  <span class="kw">WHERE</span> event_date <span class="kw">BETWEEN</span> <span class="str">'2024-01-01'</span> <span class="kw">AND</span> <span class="str">'2024-12-31'</span>  <span class="cm">-- partition pruning</span>
+)
+<span class="kw">SELECT</span>
+  s.msisdn,
+  s.full_name,
+  <span class="fn">COUNT</span>(be.billing_event_sk)  <span class="kw">AS</span> event_count,
+  <span class="fn">SUM</span>(be.amount_usd)          <span class="kw">AS</span> total_spend,
+  g.global_avg_spend
+<span class="kw">FROM</span> dim_subscriber s
+<span class="kw">INNER JOIN</span> billing_events_fact be  <span class="cm">-- explicit join, no cross-product risk</span>
+  <span class="kw">ON</span> s.subscriber_sk = be.subscriber_sk
+ <span class="kw">AND</span> be.event_date <span class="kw">BETWEEN</span> <span class="str">'2024-01-01'</span> <span class="kw">AND</span> <span class="str">'2024-12-31'</span>
+<span class="kw">CROSS JOIN</span> global_avg g
+<span class="kw">GROUP BY</span> s.msisdn, s.full_name, g.global_avg_spend
+<span class="kw">ORDER BY</span> total_spend <span class="kw">DESC</span>;</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="scard" style="flex:1;text-align:left;padding:10px 13px"><div class="slbl">Before</div><div style="font-size:16px;font-family:var(--mono);color:var(--coral);margin-top:3px">4m 22s · $2.40</div></div>
+      <div class="scard" style="flex:1;text-align:left;padding:10px 13px"><div class="slbl">Estimated after</div><div style="font-size:16px;font-family:var(--mono);color:var(--teal);margin-top:3px">~34s · $0.31</div></div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Copy optimised SQL</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 9: LINEAGE
+// ═══════════════════════════════════════════════
+function s1_lineage(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Asset to analyse</label><select class="fi"><option>Table: BSS.BILLING_EVENT (source)</option><option>Column: BILLING_EVENT.AMOUNT</option><option>Model: fct_billing_events</option></select></div>
+    <div class="fg"><label class="fl">Analysis type</label><select class="fi"><option>Impact analysis — what breaks if this changes?</option><option>Root lineage — where does this data come from?</option><option>Column-level lineage trace</option></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Proposed change</label><input class="fi" value="Rename AMOUNT → AMOUNT_GBP, add AMOUNT_USD column"></div>
+      <div class="fg"><label class="fl">Lineage sources</label><select class="fi"><option>dbt manifest + OpenLineage + Airflow</option><option>dbt manifest only</option></select></div>
+    </div>
+  </div>`;
+  ftr(0,'Trace lineage →','s2_lineage()');
+}
+function s2_lineage(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Lineage graph loaded — 847 nodes, 1,204 edges</div>
+    ${progHtml([
+      {l:'Loading dbt manifest.json',s:'Parsing model → source dependencies'},
+      {l:'Loading OpenLineage event history',s:'Airflow task lineage · job → dataset mappings'},
+      {l:'Traversing downstream graph from AMOUNT column',s:'Column-level propagation across dbt models'},
+      {l:'Identifying all affected assets',s:'Models · dashboards · ML features · API endpoints'},
+      {l:'Computing migration impact',s:'Breaking changes · backward-compatible changes · affected owners'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_lineage(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="err">⚠ High blast radius — 14 downstream assets affected · 3 dashboard owners to notify</div>
+    <div class="rsec">
+      <div class="rshdr">Blast radius — renaming AMOUNT → AMOUNT_GBP</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Asset</th><th>Type</th><th>Impact</th><th>Owner</th></tr>
+          <tr><td style="color:var(--txt)">stg_billing_events</td><td>dbt staging</td><td><span class="pill p-err">BREAKING</span></td><td>data-eng</td></tr>
+          <tr><td style="color:var(--txt)">fct_billing_events</td><td>dbt mart</td><td><span class="pill p-err">BREAKING</span></td><td>data-eng</td></tr>
+          <tr><td style="color:var(--txt)">billing_transform.py</td><td>PySpark job</td><td><span class="pill p-err">BREAKING</span></td><td>data-eng</td></tr>
+          <tr><td style="color:var(--txt)">rpt_subscriber_arpu</td><td>dbt report model</td><td><span class="pill p-err">BREAKING</span></td><td>analytics</td></tr>
+          <tr><td style="color:var(--txt)">Snowflake dashboard: ARPU by Plan</td><td>Dashboard</td><td><span class="pill p-warn">UPDATE NEEDED</span></td><td>bi-team</td></tr>
+          <tr><td style="color:var(--txt)">ML Feature: avg_spend_30d</td><td>Feature store</td><td><span class="pill p-warn">UPDATE NEEDED</span></td><td>ml-platform</td></tr>
+          <tr><td style="color:var(--txt)">API: /v2/subscriber/spend</td><td>Data API</td><td><span class="pill p-warn">UPDATE NEEDED</span></td><td>platform-api</td></tr>
+          <tr><td style="color:var(--txt)">great_expectations suite</td><td>DQ tests</td><td><span class="pill p-info">UPDATE NEEDED</span></td><td>data-eng</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Migration checklist (generated)</div>
+      <div class="codeblock" style="font-size:10px"><span class="str">[ ]</span> <span class="num">1.</span> Add AMOUNT_USD column alongside AMOUNT_GBP in source (dual-write period)
+<span class="str">[ ]</span> <span class="num">2.</span> Update stg_billing_events.sql: rename source column reference
+<span class="str">[ ]</span> <span class="num">3.</span> Update fct_billing_events.sql: update column reference + add amount_usd metric
+<span class="str">[ ]</span> <span class="num">4.</span> Update billing_transform.py: col("amount") → col("amount_gbp")
+<span class="str">[ ]</span> <span class="num">5.</span> Notify bi-team, ml-platform, platform-api owners (email generated)
+<span class="str">[ ]</span> <span class="num">6.</span> Run dbt --select state:modified+ to validate downstream
+<span class="str">[ ]</span> <span class="num">7.</span> Drop AMOUNT_GBP alias after 2-week deprecation period</div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Export impact report</button><button class="expbtn">Notify asset owners</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 10: MONITORING
+// ═══════════════════════════════════════════════
+function s1_monitoring(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Airflow environment</label><input class="fi" value="https://airflow.telecom-prod.internal"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">DAG filter</label><input class="fi" value="bss_billing_cdc_pipeline"></div>
+      <div class="fg"><label class="fl">Lookback window</label><select class="fi"><option>Last 24 hours</option><option>Last 7 days</option><option>Last 30 days</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Log sources</label><select class="fi"><option>Airflow logs + Spark UI + Datadog</option><option>Airflow logs only</option></select></div>
+    <div class="fg"><label class="fl">Escalation</label><select class="fi"><option>Auto-raise Jira + Slack #data-oncall</option><option>PagerDuty page</option><option>Report only</option></select></div>
+  </div>`;
+  ftr(0,'Scan pipeline health →','s2_monitoring()');
+}
+function s2_monitoring(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Connected to Airflow · 24h window · 96 task instances found</div>
+    ${progHtml([
+      {l:'Fetching DAG run history from Airflow API',s:'96 task instances · state distribution · duration stats'},
+      {l:'Identifying failures and SLA misses',s:'4 task failures detected in last 24h'},
+      {l:'Reading Spark executor logs for failed tasks',s:'OOMKilledException · executor lost events · GC logs'},
+      {l:'Performing root cause analysis',s:'Correlating log patterns with known failure signatures'},
+      {l:'Generating incident report and fix suggestion',s:'Raising Jira INCIDENT-0219'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_monitoring(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="err">⚠ 4 task failures detected · 1 SLA breach · Jira INCIDENT-0219 raised</div>
+    <div class="rsec">
+      <div class="rshdr">Pipeline health — last 24h</div>
+      <div class="sgrid">
+        <div class="scard"><div class="sval" style="color:var(--teal)">92</div><div class="slbl">Succeeded</div></div>
+        <div class="scard"><div class="sval" style="color:var(--coral)">4</div><div class="slbl">Failed</div></div>
+        <div class="scard"><div class="sval" style="color:var(--amber)">1</div><div class="slbl">SLA breach</div></div>
+        <div class="scard"><div class="sval" style="color:var(--teal)">96%</div><div class="slbl">Success rate</div></div>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Recent DAG runs</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Run ID</th><th>Start</th><th>Duration</th><th>Status</th><th>Failed task</th></tr>
+          <tr><td style="font-family:var(--mono);font-size:10px">2024-01-15T09:00</td><td>09:00</td><td>18m 22s</td><td><span class="pill p-ok">SUCCESS</span></td><td>—</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:10px">2024-01-15T08:45</td><td>08:45</td><td>32m 10s</td><td><span class="pill p-err">FAILED</span></td><td>merge_target</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:10px">2024-01-15T08:30</td><td>08:30</td><td>19m 04s</td><td><span class="pill p-ok">SUCCESS</span></td><td>—</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:10px">2024-01-15T08:15</td><td>08:15</td><td>41m 55s</td><td><span class="pill p-err">FAILED</span></td><td>merge_target</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Root cause analysis</div>
+      <div class="row-card"><div style="display:flex;gap:9px"><div class="lbar lbar-err"></div><div>
+        <div style="font-size:12px;font-weight:500;color:var(--txt);margin-bottom:4px">OOMKilledException in merge_target task</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--coral);background:var(--bg3);border:1px solid var(--b);border-radius:5px;padding:7px 10px;margin-bottom:6px">ERROR SparkContext: OOMKilledException: Executor killed by external signal
+        Java heap space — executor 4 lost after GC overhead 98%</div>
+        <div style="font-size:11.5px;color:var(--txt2);line-height:1.7"><b style="color:var(--txt)">Cause:</b> Unusual spike in billing volume (+340% vs baseline) on 08:15 run caused Spark executor OOM during shuffle phase of the MERGE operation.<br><b style="color:var(--txt)">Fix recommendation:</b> Increase executor memory from 8GB to 16GB in SparkSubmitOperator config, OR enable adaptive query execution (AQE) with coalesce on shuffle partitions.<br><b style="color:var(--txt)">Immediate action:</b> Re-run failed DAG runs with --conf spark.executor.memory=16g override.</div>
+      </div></div></div>
+    </div>
+    <div class="jira-ok">📋 INCIDENT-0219 raised · assigned to data-platform-team · Slack #data-oncall alerted</div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">View INCIDENT-0219</button><button class="expbtn">Trigger re-run</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AGENT 11: COST
+// ═══════════════════════════════════════════════
+function s1_cost(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="fg"><label class="fl">Warehouse platform</label><select class="fi"><option>Snowflake (ACCOUNT_USAGE)</option><option>BigQuery (INFORMATION_SCHEMA)</option><option>Databricks (cluster usage API)</option></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Analysis period</label><select class="fi"><option>Last 30 days</option><option>Last 7 days</option><option>Last quarter</option></select></div>
+      <div class="fg"><label class="fl">Credit cost (USD)</label><input class="fi" value="$3.00 per credit"></div>
+    </div>
+    <div class="fg"><label class="fl">Team filter (leave blank for all)</label><input class="fi" placeholder="e.g. data-eng, analytics, ml-platform"></div>
+    <div class="fg"><label class="fl">Report recipients</label><input class="fi" value="data-platform-lead@telecom.com, cto-office@telecom.com"></div>
+  </div>`;
+  ftr(0,'Analyse spend →','s2_cost()');
+}
+function s2_cost(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Snowflake ACCOUNT_USAGE connected · 30-day window</div>
+    ${progHtml([
+      {l:'Querying QUERY_HISTORY and WAREHOUSE_METERING_HISTORY',s:'2.4M query records · 30 warehouse-days'},
+      {l:'Attributing spend by role and query tag',s:'Mapping Snowflake roles to teams'},
+      {l:'Identifying top expensive queries',s:'Total credit cost per query hash · frequency analysis'},
+      {l:'Detecting idle warehouses and unused tables',s:'Auto-suspend gaps · zero-query tables'},
+      {l:'Computing optimisation opportunities',s:'Credit savings per recommendation · ROI ranking'},
+    ])}
+  </div>`;
+  ftr(1,'','');
+  runProgress([1,2,3,4,5],()=>renderStep(3));
+}
+function s3_cost(){
+  document.getElementById('pb').innerHTML=`<div class="fu">
+    <div class="ok">✓ Analysis complete · $47,200 total spend · $18,400 savings identified</div>
+    <div class="rsec">
+      <div class="rshdr">30-day summary</div>
+      <div class="sgrid">
+        <div class="scard"><div class="sval" style="color:var(--coral)">$47.2K</div><div class="slbl">Total spend</div></div>
+        <div class="scard"><div class="sval" style="color:var(--teal)">$18.4K</div><div class="slbl">Saveable</div></div>
+        <div class="scard"><div class="sval" style="color:var(--amber)">15,733</div><div class="slbl">Credits used</div></div>
+        <div class="scard"><div class="sval" style="color:var(--coral)">39%</div><div class="slbl">Waste ratio</div></div>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Spend by team</div>
+      <div style="overflow-x:auto;border-radius:7px;border:1px solid var(--b)">
+        <table class="tbl">
+          <tr><th>Team</th><th>Credits</th><th>Cost</th><th>Top driver</th><th>Trend</th></tr>
+          <tr><td style="color:var(--txt)">analytics</td><td>6,420</td><td>$19,260</td><td>Ad-hoc queries</td><td><span style="color:var(--coral)">↑ 34%</span></td></tr>
+          <tr><td style="color:var(--txt)">data-engineering</td><td>5,180</td><td>$15,540</td><td>Pipeline loads</td><td><span style="color:var(--teal)">↓ 8%</span></td></tr>
+          <tr><td style="color:var(--txt)">ml-platform</td><td>2,940</td><td>$8,820</td><td>Feature engineering</td><td><span style="color:var(--amber)">→ 2%</span></td></tr>
+          <tr><td style="color:var(--txt)">bi-team</td><td>1,193</td><td>$3,580</td><td>Dashboard refreshes</td><td><span style="color:var(--teal)">↓ 5%</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rshdr">Top savings opportunities</div>
+      <div class="row-card"><div style="display:flex;gap:9px;align-items:flex-start"><div class="lbar lbar-err"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:var(--txt)">Enable auto-suspend on ANALYTICS_WH (currently 0 min)</div><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">-$6,200/mo</span></div><div style="font-size:11px;color:var(--txt3)">Warehouse idle 38% of time · Set AUTO_SUSPEND = 60s → immediate saving</div></div></div></div>
+      <div class="row-card"><div style="display:flex;gap:9px;align-items:flex-start"><div class="lbar lbar-err"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:var(--txt)">Optimise 3 high-cost queries (analytics team)</div><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">-$4,800/mo</span></div><div style="font-size:11px;color:var(--txt3)">3 query hashes account for 25% of analytics spend · missing partition filters · run Query Optimisation Agent</div></div></div></div>
+      <div class="row-card"><div style="display:flex;gap:9px;align-items:flex-start"><div class="lbar lbar-warn"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:var(--txt)">Drop 12 unused tables (>90 days no query)</div><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">-$1,800/mo</span></div><div style="font-size:11px;color:var(--txt3)">Combined 4.2TB in Snowflake storage · zero queries in 90 days · archive or drop after owner confirmation</div></div></div></div>
+      <div class="row-card"><div style="display:flex;gap:9px;align-items:flex-start"><div class="lbar lbar-warn"></div><div style="flex:1"><div style="display:flex;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:var(--txt)">Enable result_scan caching for repeated BI queries</div><span style="font-family:var(--mono);font-size:11px;color:var(--teal)">-$5,600/mo</span></div><div style="font-size:11px;color:var(--txt3)">47 identical query patterns re-execute daily without cache · RESULT_SCAN + session caching reduces re-compute</div></div></div></div>
+    </div>
+  </div>`;
+  document.getElementById('pf').innerHTML=`<button class="btn btn-g" onclick="go(2)">← Back</button><div style="display:flex;gap:7px"><button class="expbtn">Export PDF report</button><button class="expbtn">Email to stakeholders</button><button class="btn btn-p" onclick="closeAgent()">Done ✓</button></div>`;
+}
+</script>
+</body>
+</html>

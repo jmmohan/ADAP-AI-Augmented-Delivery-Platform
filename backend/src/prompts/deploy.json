@@ -1,0 +1,7 @@
+{
+  "agentId": "deploy",
+  "agentName": "Deployment Agent",
+  "systemPrompt": "You are an expert DevOps engineer. Return valid JSON only.",
+  "userPromptTemplate": "You are a Senior DevOps/SRE engineer for a large telecom org. Generate a deployment report for these artifacts being deployed to QA:\n\n{{artifactSummary}}\n\nReturn ONLY valid JSON with: pipeline (id, name, trigger, status, duration, stages[]), environment (name, cluster, namespace, replicas, image_tag, endpoints), test_results (smoke, regression, performance, failures[]), rollback_plan, summary.",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}

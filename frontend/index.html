@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AADP — AI-Augmented Delivery Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <div class="logo-mark"><span class="logo-att">ATT</span><span class="logo-eye">Eye</span></div>
+        <div class="app-title-row">
+          <span class="app-title">AADP</span>
+          <span class="app-title-sep">—</span>
+          <span class="app-subtitle">AI-Augmented Delivery Platform</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">☀ Light</button>
+        <span class="version-pill">PoC · v0.2</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+
+        <!-- Software Engineering folder -->
+        <div class="sidebar-section">
+          <div class="sidebar-folder" id="folder-se" onclick="toggleFolder('se')">
+            <span class="folder-arrow" id="arrow-se">▼</span>
+            <span class="folder-icon">💻</span>
+            <span class="folder-name">Software Engineering</span>
+          </div>
+          <ul class="nav-list folder-content" id="content-se">
+            <li><a href="#" class="nav-link active" onclick="selectAgent('se', 0)">📋 Product Owner</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 1)">🏗️ Arch & Tech Spec</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 2)">🏛️ Architecture Review</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 3)">🔍 Code Review</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 4)">🧪 Test Planning</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 5)">⚙️ Code Generation</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 6)">🚀 Deployment</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 7)">🔎 Monitoring & Triage</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 8)">🔒 Security</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 9)">📄 Documentation</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 10)">📦 Release Management</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 11)">🏛️ Compliance</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 12)">⚡ Performance</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 13)">🔥 Incident Management</a></li>
+          </ul>
+        </div>
+
+        <!-- Data Engineering folder -->
+        <div class="sidebar-section">
+          <div class="sidebar-folder" id="folder-de" onclick="toggleFolder('de')">
+            <span class="folder-arrow" id="arrow-de">▼</span>
+            <span class="folder-icon">🗄️</span>
+            <span class="folder-name">Data Engineering</span>
+          </div>
+          <ul class="nav-list folder-content" id="content-de">
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 0)">🔍 Data Discovery</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 1)">📐 Data Modelling</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 2)">🏛️ Governance & Catalogue</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 3)">🗺️ Pipeline Design</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 4)">⚙️ ETL / ELT Code Gen</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 5)">⚡ Streaming Pipeline</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 6)">✅ Data Quality</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 7)">🚀 Query Optimisation</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 8)">🕸️ Lineage & Impact</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 9)">📡 Pipeline Monitoring</a></li>
+            <li><a href="#" class="nav-link de-link" onclick="selectAgent('de', 10)">💰 Cost Optimisation</a></li>
+          </ul>
+        </div>
+
+      </nav>
+    </aside>
+
+    <main class="main-content" id="home">
+    <div class="hero">
+      <h1>Delivery Intelligence - <em>agent by agent.</em></h1>
+      <p>Select an agent to activate. Each agent connects to your toolchain, reasons over your data, and produces structured artifacts — all with human-in-the-loop gates.</p>
+      <div class="hero-meta">
+        <span class="hero-meta-item"><b>24</b> agents</span>
+        <span class="hero-meta-item"><b>24</b> active</span>
+        <span class="hero-meta-item"><b>GPT-4o</b> backbone</span>
+        <span class="hero-meta-item"><b>GitHub Copilot</b> integrated</span>
+      </div>
+    </div>
+
+    <!-- Domain Tabs -->
+    <div class="domain-tabs">
+      <button class="domain-tab active" id="tab-se" onclick="switchDomain('se')">
+        <span class="dtab-icon">💻</span> Software Engineering
+        <span class="dtab-count">14 agents</span>
+      </button>
+      <button class="domain-tab" id="tab-de" onclick="switchDomain('de')">
+        <span class="dtab-icon">🗄️</span> Data Engineering
+        <span class="dtab-count">11 agents</span>
+      </button>
+    </div>
+
+    <!-- SE Panel -->
+    <div id="panel-se">
+    <div class="sec-header">
+      <span class="sec-label">Software Engineering Agents</span>
+      <div class="sec-line"></div>
+    </div>
+    <div class="agents-grid">
+      <div class="agent-card featured" onclick="selectAgent('se', 0)">
+        <div class="card-top">
+          <div class="card-icon">📋</div>
+          <span class="card-badge badge-active">● ACTIVE</span>
+        </div>
+        <div class="card-name">Product Owner Agent</div>
+        <div class="card-desc">Reads epics from Jira, decomposes them into detailed user stories with estimates, acceptance criteria, sprint plans, and risk registers.</div>
+        <div class="card-tags">
+          <span class="card-tag">Jira MCP</span>
+          <span class="card-tag">GPT-4o</span>
+          <span class="card-tag">SAFe</span>
+          <span class="card-tag">Gherkin AC</span>
+        </div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('po')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 1)">
+        <div class="card-top"><div class="card-icon">🏗️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Arch & Tech Spec Agent</div>
+        <div class="card-desc">Generates HLD, LLD, ADRs, OpenAPI contracts, and sequence diagrams from approved user stories.</div>
+        <div class="card-tags"><span class="card-tag">Confluence</span><span class="card-tag">Mermaid</span><span class="card-tag">OpenAPI</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('arch')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 2)">
+        <div class="card-top"><div class="card-icon">🏛️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Architecture Review Agent</div>
+        <div class="card-desc">Reviews architecture specs for ADR compliance, component boundary conformance, design pattern correctness, and API contract validation.</div>
+        <div class="card-tags"><span class="card-tag">ADR Check</span><span class="card-tag">OpenAPI Validation</span><span class="card-tag">Design Patterns</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('review')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 3)">
+        <div class="card-top"><div class="card-icon">🔍</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Code Review Agent</div>
+        <div class="card-desc">Clones Git repos, scans source files with AI for security, reliability and style issues, generates fixes, and pushes corrected code via PR.</div>
+        <div class="card-tags"><span class="card-tag">GitHub</span><span class="card-tag">AI Review</span><span class="card-tag">Auto-Fix</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('codereview')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 4)">
+        <div class="card-top"><div class="card-icon">🧪</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Test Planning Agent</div>
+        <div class="card-desc">Generates test strategy, test cases, BDD scenarios, and Playwright / Pytest automation scripts from ACs.</div>
+        <div class="card-tags"><span class="card-tag">Playwright</span><span class="card-tag">BDD</span><span class="card-tag">Pytest</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('test')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 5)">
+        <div class="card-top"><div class="card-icon">⚙️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Code Generation Agent</div>
+        <div class="card-desc">Scaffolds and implements code using GitHub Copilot Enterprise, generates unit tests, runs static analysis, and opens PRs.</div>
+        <div class="card-tags"><span class="card-tag">Copilot Enterprise</span><span class="card-tag">SonarQube</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('code')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 6)">
+        <div class="card-top"><div class="card-icon">🚀</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Deployment Agent</div>
+        <div class="card-desc">Orchestrates CI/CD pipelines, deploys to QA, runs automation suites, triages failures, and raises Jira defects.</div>
+        <div class="card-tags"><span class="card-tag">Jenkins</span><span class="card-tag">GitHub Actions</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('deploy')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 7)">
+        <div class="card-top"><div class="card-icon">🔎</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Monitoring & Triage Agent</div>
+        <div class="card-desc">Detects prod anomalies, correlates traces from Datadog / ELK / Jaeger, performs RCA, and raises Jira defects with fix suggestions.</div>
+        <div class="card-tags"><span class="card-tag">Datadog</span><span class="card-tag">Jaeger</span><span class="card-tag">ELK</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('monitor')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 8)">
+        <div class="card-top"><div class="card-icon">🔒</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Security Agent</div>
+        <div class="card-desc">Performs STRIDE threat modeling, SAST/DAST scans, container security analysis, OWASP Top 10 compliance checks, and IaC security review.</div>
+        <div class="card-tags"><span class="card-tag">Semgrep</span><span class="card-tag">Trivy</span><span class="card-tag">OWASP</span><span class="card-tag">STRIDE</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('security')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 9)">
+        <div class="card-top"><div class="card-icon">📄</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Documentation Agent</div>
+        <div class="card-desc">Auto-generates API docs, runbooks, release notes, architecture wiki pages, and onboarding guides from all agent artifacts.</div>
+        <div class="card-tags"><span class="card-tag">Confluence</span><span class="card-tag">Markdown</span><span class="card-tag">OpenAPI Docs</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('doc')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 10)">
+        <div class="card-top"><div class="card-icon">📦</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Release Management Agent</div>
+        <div class="card-desc">Orchestrates go/no-go decisions with readiness checklists, scorecards, changelogs, version management, and stakeholder notifications.</div>
+        <div class="card-tags"><span class="card-tag">SemVer</span><span class="card-tag">Changelog</span><span class="card-tag">Canary</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('release')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 11)">
+        <div class="card-top"><div class="card-icon">🏛️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Compliance & Governance Agent</div>
+        <div class="card-desc">Maps to SOC 2, GDPR, FCC/3GPP regulations. Generates audit trails, policy enforcement reports, license audits, and change requests.</div>
+        <div class="card-tags"><span class="card-tag">SOC 2</span><span class="card-tag">GDPR</span><span class="card-tag">3GPP</span><span class="card-tag">Audit</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('compliance')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 12)">
+        <div class="card-top"><div class="card-icon">⚡</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Performance Engineering Agent</div>
+        <div class="card-desc">Defines performance budgets, generates load test scripts, models capacity, detects bottlenecks, and validates SLA compliance proactively.</div>
+        <div class="card-tags"><span class="card-tag">k6</span><span class="card-tag">Capacity Planning</span><span class="card-tag">N+1 Detection</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('perf')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 13)">
+        <div class="card-top"><div class="card-icon">🔥</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Incident Management Agent</div>
+        <div class="card-desc">Generates blameless postmortems, tracks action items, identifies recurring incident patterns, and suggests runbook updates.</div>
+        <div class="card-tags"><span class="card-tag">Postmortem</span><span class="card-tag">MTTR</span><span class="card-tag">Pattern Analysis</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('incident')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+    </div>
+    </div><!-- /panel-se -->
+
+    <!-- DE Panel -->
+    <div id="panel-de" style="display:none">
+    <div class="sec-header">
+      <span class="sec-label">Data Engineering Agents</span>
+      <div class="sec-line"></div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="de-phase-hdr">
+      <div class="de-phase-dot" style="background:var(--accent)"></div>
+      <span class="de-phase-label" style="color:var(--accent)">Phase 1 — Discover &amp; Model</span>
+      <div class="sec-line"></div>
+      <span class="de-phase-count">3 agents</span>
+    </div>
+    <div class="agents-grid">
+      <div class="agent-card de-card de-phase-1" onclick="selectAgent('de', 0)">
+        <div class="card-top"><div class="card-icon">🔍</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Data Discovery &amp; Profiling</div>
+        <div class="card-desc">Crawls source systems, profiles every column — nulls, cardinality, distributions, PII detection — and writes catalogue entries automatically.</div>
+        <div class="card-tags"><span class="card-tag">OpenMetadata</span><span class="card-tag">Great Expectations</span><span class="card-tag">Snowflake</span><span class="card-tag">Postgres</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-1" onclick="selectAgent('de', 1)">
+        <div class="card-top"><div class="card-icon">📐</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Data Modelling</div>
+        <div class="card-desc">Designs star / snowflake / Data Vault models from requirements, generates dbt model files, YAML docs, SCD strategy, and grain definitions.</div>
+        <div class="card-tags"><span class="card-tag">dbt</span><span class="card-tag">Kimball</span><span class="card-tag">Data Vault 2.0</span><span class="card-tag">BigQuery</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-1" onclick="selectAgent('de', 2)">
+        <div class="card-top"><div class="card-icon">🏛️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Governance &amp; Catalogue</div>
+        <div class="card-desc">Auto-classifies PII, tags sensitivity, writes business glossary entries, enforces access policies, syncs catalogue as schemas evolve.</div>
+        <div class="card-tags"><span class="card-tag">Collibra</span><span class="card-tag">Apache Atlas</span><span class="card-tag">Unity Catalog</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="de-phase-hdr">
+      <div class="de-phase-dot" style="background:var(--purple)"></div>
+      <span class="de-phase-label" style="color:var(--purple)">Phase 2 — Build &amp; Ingest</span>
+      <div class="sec-line"></div>
+      <span class="de-phase-count">3 agents</span>
+    </div>
+    <div class="agents-grid">
+      <div class="agent-card de-card de-phase-2" onclick="selectAgent('de', 3)">
+        <div class="card-top"><div class="card-icon">🗺️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Pipeline Design</div>
+        <div class="card-desc">Chooses ingestion pattern (CDC, micro-batch, streaming), designs Airflow DAG topology with retry logic and SLA gates, writes the ADR.</div>
+        <div class="card-tags"><span class="card-tag">Airflow</span><span class="card-tag">Prefect</span><span class="card-tag">Debezium</span><span class="card-tag">Kafka Connect</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-2" onclick="selectAgent('de', 4)">
+        <div class="card-top"><div class="card-icon">⚙️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">ETL / ELT Code Generation</div>
+        <div class="card-desc">Generates PySpark jobs, dbt SQL transformations, Airflow operators, and pytest unit tests from source-to-target mappings and pipeline spec.</div>
+        <div class="card-tags"><span class="card-tag">PySpark</span><span class="card-tag">dbt SQL</span><span class="card-tag">Delta Lake</span><span class="card-tag">Pytest</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-2" onclick="selectAgent('de', 5)">
+        <div class="card-top"><div class="card-icon">⚡</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Streaming Pipeline</div>
+        <div class="card-desc">Designs Kafka topologies, generates Flink / Spark Streaming jobs with windowing, watermarks, and exactly-once semantics.</div>
+        <div class="card-tags"><span class="card-tag">Apache Kafka</span><span class="card-tag">Apache Flink</span><span class="card-tag">Spark Streaming</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="de-phase-hdr">
+      <div class="de-phase-dot" style="background:var(--amber)"></div>
+      <span class="de-phase-label" style="color:var(--amber)">Phase 3 — Validate &amp; Optimise</span>
+      <div class="sec-line"></div>
+      <span class="de-phase-count">2 agents</span>
+    </div>
+    <div class="agents-grid" style="grid-template-columns: repeat(2, 1fr)">
+      <div class="agent-card de-card de-phase-3" onclick="selectAgent('de', 6)">
+        <div class="card-top"><div class="card-icon">✅</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Data Quality</div>
+        <div class="card-desc">Infers DQ rules from profiles and business definitions, generates Great Expectations / dbt test suites, runs CI checks, detects anomalies, and raises incidents automatically.</div>
+        <div class="card-tags"><span class="card-tag">Great Expectations</span><span class="card-tag">dbt tests</span><span class="card-tag">Monte Carlo</span><span class="card-tag">Soda</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-3" onclick="selectAgent('de', 7)">
+        <div class="card-top"><div class="card-icon">🚀</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Query Optimisation</div>
+        <div class="card-desc">Reads execution plans and slow query logs, identifies anti-patterns, rewrites SQL with explanations, recommends indexes and clustering keys.</div>
+        <div class="card-tags"><span class="card-tag">Snowflake</span><span class="card-tag">BigQuery</span><span class="card-tag">Spark UI</span><span class="card-tag">Postgres EXPLAIN</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="de-phase-hdr">
+      <div class="de-phase-dot" style="background:var(--red)"></div>
+      <span class="de-phase-label" style="color:var(--red)">Phase 4 — Operate &amp; Observe</span>
+      <div class="sec-line"></div>
+      <span class="de-phase-count">3 agents</span>
+    </div>
+    <div class="agents-grid">
+      <div class="agent-card de-card de-phase-4" onclick="selectAgent('de', 8)">
+        <div class="card-top"><div class="card-icon">🕸️</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Lineage &amp; Impact Analysis</div>
+        <div class="card-desc">Traces column-level lineage across pipelines, computes blast radius of schema changes, generates impact reports for consumers and migration checklists.</div>
+        <div class="card-tags"><span class="card-tag">OpenLineage</span><span class="card-tag">Marquez</span><span class="card-tag">dbt lineage</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-4" onclick="selectAgent('de', 9)">
+        <div class="card-top"><div class="card-icon">📡</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Pipeline Monitoring &amp; Incident</div>
+        <div class="card-desc">Watches Airflow / Prefect task states, detects SLA misses, reads Spark logs for RCA, auto-retries or escalates, files Jira incidents with full diagnostic context.</div>
+        <div class="card-tags"><span class="card-tag">Airflow REST API</span><span class="card-tag">Datadog</span><span class="card-tag">PagerDuty</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+      <div class="agent-card de-card de-phase-4" onclick="selectAgent('de', 10)">
+        <div class="card-top"><div class="card-icon">💰</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">DataOps Cost Optimisation</div>
+        <div class="card-desc">Attributes warehouse spend per team and workload, flags idle clusters and costly queries, unused tables, and produces a ranked optimisation report with specific actions.</div>
+        <div class="card-tags"><span class="card-tag">Snowflake ACCOUNT_USAGE</span><span class="card-tag">BigQuery BI Engine</span><span class="card-tag">Databricks</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span></div>
+      </div>
+    </div>
+    </div><!-- /panel-de -->
+
+  </main>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-bg" onclick="closePanel()"></div>
+    <div class="panel">
+      <div class="panel-hdr">
+        <div>
+          <div class="panel-eyebrow" id="panel-eyebrow">Agent</div>
+          <div class="panel-title" id="panel-title">Loading…</div>
+        </div>
+        <button class="btn-close" onclick="closePanel()">✕</button>
+      </div>
+
+      <div class="step-bar" id="step-bar"></div>
+
+      <div class="panel-body" id="panel-body"></div>
+      <div class="panel-ftr" id="panel-ftr"></div>
+    </div>
+  </div>
+
+  <!-- Prompt Editor Modal -->
+  <div class="prompt-overlay" id="prompt-overlay">
+    <div class="prompt-overlay-bg" onclick="closePromptEditor()"></div>
+    <div class="prompt-editor">
+      <div class="prompt-editor-hdr">
+        <div>
+          <div class="prompt-editor-eyebrow" id="prompt-editor-eyebrow">Agent Prompt</div>
+          <div class="prompt-editor-title" id="prompt-editor-title">Loading…</div>
+        </div>
+        <button class="btn-close" onclick="closePromptEditor()">✕</button>
+      </div>
+      <div class="prompt-editor-body" id="prompt-editor-body"></div>
+      <div class="prompt-editor-ftr" id="prompt-editor-ftr"></div>
+    </div>
+  </div>
+
+  <!-- DE Agent Slide-in Panel -->
+  <div class="overlay" id="de-overlay">
+    <div class="overlay-bg" onclick="closeDePanel()"></div>
+    <div class="panel">
+      <div class="panel-hdr">
+        <div>
+          <div class="panel-eyebrow" id="de-panel-eyebrow">Data Engineering Agent</div>
+          <div class="panel-title" id="de-panel-title">Loading…</div>
+        </div>
+        <button class="btn-close" onclick="closeDePanel()">✕</button>
+      </div>
+      <div class="step-bar" id="de-step-bar"></div>
+      <div class="panel-body" id="de-panel-body"></div>
+      <div class="panel-ftr" id="de-panel-ftr"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

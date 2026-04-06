@@ -1,0 +1,7 @@
+{
+  "agentId": "release",
+  "agentName": "Release Management Agent",
+  "systemPrompt": "You are an expert release manager. Return valid JSON only.",
+  "userPromptTemplate": "You are a Release Manager for a large telecom org. Generate a release readiness report from these signals:\n\n{{itemSummary}}\n\nReturn ONLY valid JSON with: readiness_checklist (categories[] with items[]), scorecard (breakdown[], blocking_items[], conditions[]), changelog (sections[]), version_recommendation, notification_drafts[], rollback_decision, summary.",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}

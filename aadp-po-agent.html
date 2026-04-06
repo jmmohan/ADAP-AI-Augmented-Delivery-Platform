@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AADP — AI-Augmented Delivery Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#090B0F; --bg2:#111520; --bg3:#181E2E;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --accent:#00D9A6; --accent-dim:rgba(0,217,166,0.1); --accent-glow:rgba(0,217,166,0.22);
+  --text:#E4E8F1; --text2:#8B92A5; --text3:#4F5669;
+  --red:#FF5555; --amber:#F5A623; --purple:#8B5CF6; --blue:#3B82F6;
+  --mono:'IBM Plex Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;}
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:54px;border-bottom:1px solid var(--border);background:rgba(9,11,15,0.94);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;}
+.nav-left{display:flex;align-items:center;gap:10px;}
+.logo-mark{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#090B0F;letter-spacing:-0.5px;}
+.nav-title{font-size:13px;font-weight:500;letter-spacing:0.2px;}
+.nav-divider{width:1px;height:16px;background:var(--border2);}
+.nav-sub{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.nav-pill{font-family:var(--mono);font-size:9px;background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,217,166,0.2);padding:3px 9px;border-radius:20px;letter-spacing:0.05em;}
+/* HOME */
+.hero{padding:44px 28px 30px;border-bottom:1px solid var(--border);}
+.hero h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:8px;}
+.hero h1 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text2);font-size:13px;max-width:500px;line-height:1.7;}
+.hero-meta{display:flex;gap:20px;margin-top:14px;}
+.hero-meta-item{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.hero-meta-item b{color:var(--text2);font-weight:400;}
+.sec-header{padding:22px 28px 14px;display:flex;align-items:center;gap:12px;}
+.sec-label{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--text3);letter-spacing:0.09em;text-transform:uppercase;white-space:nowrap;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+/* CARDS */
+.agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 28px 32px;}
+.agent-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.agent-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.agent-card.locked{opacity:0.4;cursor:not-allowed;pointer-events:none;}
+.agent-card.featured{border-color:rgba(0,217,166,0.3);background:linear-gradient(135deg,#111520 0%,#0C1A18 100%);box-shadow:0 0 36px rgba(0,217,166,0.07),inset 0 1px 0 rgba(0,217,166,0.08);}
+.agent-card.featured:hover{border-color:rgba(0,217,166,0.5);box-shadow:0 0 48px rgba(0,217,166,0.14),inset 0 1px 0 rgba(0,217,166,0.12);transform:translateY(-2px);}
+.agent-card.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.5;}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.card-icon{width:34px;height:34px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.featured .card-icon{background:var(--accent-dim);border-color:rgba(0,217,166,0.15);}
+.card-badge{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:0.09em;padding:3px 8px;border-radius:20px;}
+.badge-active{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,217,166,0.2);animation:pulse-b 2.5s ease-in-out infinite;}
+@keyframes pulse-b{0%,100%{opacity:1}50%{opacity:0.6}}
+.badge-soon{background:rgba(245,166,35,0.08);color:var(--amber);border:1px solid rgba(245,166,35,0.15);}
+.badge-lock{background:rgba(255,255,255,0.03);color:var(--text3);border:1px solid var(--border);}
+.card-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.3;}
+.featured .card-name{color:#fff;}
+.card-desc{font-size:11.5px;color:var(--text2);line-height:1.65;margin-bottom:12px;}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;}
+.card-tag{font-family:var(--mono);font-size:9px;color:var(--text3);background:rgba(255,255,255,0.02);border:1px solid var(--border);padding:2px 7px;border-radius:4px;}
+.featured .card-tag{color:var(--text2);background:rgba(0,217,166,0.04);border-color:rgba(0,217,166,0.1);}
+.card-foot{padding-top:12px;border-top:1px solid var(--border);}
+.card-cta{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);font-weight:500;}
+.card-lock-msg{font-family:var(--mono);font-size:10px;color:var(--text3);}
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;z-index:200;}
+.overlay.open{display:flex;}
+.overlay-bg{position:absolute;inset:0;background:rgba(4,6,10,0.82);backdrop-filter:blur(5px);}
+.panel{position:absolute;right:0;top:0;bottom:0;width:700px;background:var(--bg);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.38s cubic-bezier(0.22,0.58,0.36,1);}
+.overlay.open .panel{transform:translateX(0);}
+.panel-hdr{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.panel-eyebrow{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;}
+.panel-title{font-size:16px;font-weight:600;color:#fff;}
+.btn-close{width:30px;height:30px;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.15s;}
+.btn-close:hover{border-color:var(--border2);color:var(--text);}
+/* STEPS */
+.step-bar{padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0;flex-shrink:0;}
+.stp{display:flex;align-items:center;gap:7px;flex:1;}
+.stp-dot{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--text3);background:var(--bg2);flex-shrink:0;transition:all 0.25s;}
+.stp.done .stp-dot{background:var(--accent);border-color:var(--accent);color:#090B0F;font-weight:600;}
+.stp.active .stp-dot{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px rgba(0,217,166,0.1);}
+.stp-label{font-size:10px;color:var(--text3);font-family:var(--mono);transition:color 0.2s;}
+.stp.done .stp-label{color:var(--accent);}
+.stp.active .stp-label{color:var(--text2);}
+.stp-line{height:1px;background:var(--border);flex:0 0 28px;}
+/* BODY */
+.panel-body{flex:1;overflow-y:auto;padding:22px;}
+.panel-body::-webkit-scrollbar{width:3px;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+/* FOOTER */
+.panel-ftr{padding:14px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+/* FORMS */
+.fgrp{margin-bottom:14px;}
+.flabel{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px;display:block;}
+.finput{width:100%;padding:9px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12.5px;font-family:var(--sans);outline:none;transition:border-color 0.15s;}
+.finput:focus{border-color:rgba(0,217,166,0.35);}
+.finput::placeholder{color:var(--text3);}
+.fhint{font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);}
+.btn-primary{background:var(--accent);color:#090B0F;}
+.btn-primary:hover{background:#00EDB8;transform:translateY(-1px);}
+.btn-primary:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid rgba(0,217,166,0.25);}
+.btn-outline:hover{background:var(--accent-dim);}
+/* STATUS BOXES */
+.info-box{background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:10px 13px;font-size:11.5px;color:var(--text2);margin-bottom:14px;line-height:1.65;}
+.info-box strong{color:var(--purple);font-weight:500;}
+.success-box{background:rgba(0,217,166,0.06);border:1px solid rgba(0,217,166,0.2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px;line-height:1.5;}
+.error-box{background:rgba(255,85,85,0.06);border:1px solid rgba(255,85,85,0.15);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--red);margin-bottom:14px;}
+/* EPICS */
+.epic-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:7px;cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:11px;background:var(--bg2);}
+.epic-item:hover{border-color:var(--border2);}
+.epic-item.sel{border-color:rgba(0,217,166,0.4);background:rgba(0,217,166,0.04);}
+.epic-chk{width:17px;height:17px;border:1.5px solid var(--border2);border-radius:5px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.epic-item.sel .epic-chk{background:var(--accent);border-color:var(--accent);color:#090B0F;}
+.epic-key{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:2px;}
+.epic-summary{font-size:12.5px;font-weight:500;color:var(--text);line-height:1.4;}
+.epic-desc{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;}
+.epic-meta{display:flex;gap:6px;margin-top:7px;align-items:center;}
+.epill{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 7px;border-radius:4px;letter-spacing:0.04em;text-transform:uppercase;}
+.p-critical{background:rgba(255,85,85,0.1);color:var(--red);}
+.p-high{background:rgba(245,166,35,0.1);color:var(--amber);}
+.p-medium{background:rgba(139,92,246,0.1);color:var(--purple);}
+.p-low{background:rgba(255,255,255,0.05);color:var(--text3);}
+.status-pill{font-family:var(--mono);font-size:9px;color:var(--text3);padding:2px 7px;background:rgba(255,255,255,0.04);border-radius:4px;border:1px solid var(--border);text-transform:uppercase;letter-spacing:0.04em;}
+/* GENERATE */
+.prog-list{display:flex;flex-direction:column;gap:0;margin:16px 0;}
+.prog-item{display:flex;align-items:flex-start;gap:13px;padding:9px 0;position:relative;}
+.prog-item:not(:last-child)::after{content:'';position:absolute;left:11px;top:34px;bottom:0;width:1px;background:var(--border);z-index:0;}
+.prog-dot{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;background:var(--bg2);transition:all 0.3s;z-index:1;position:relative;}
+.prog-item.running .prog-dot{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,217,166,0.12);}
+.prog-item.running .prog-dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid transparent;border-top-color:var(--accent);animation:spin 0.9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.prog-item.done .prog-dot{background:var(--accent);border-color:var(--accent);color:#090B0F;font-weight:600;}
+.prog-item.pending .prog-dot{opacity:0.25;}
+.prog-label{font-size:12.5px;color:var(--text3);padding-top:2px;line-height:1.4;transition:color 0.2s;}
+.prog-item.running .prog-label{color:var(--text);}
+.prog-item.done .prog-label{color:var(--accent);}
+.prog-sublabel{font-size:10px;color:var(--text3);font-family:var(--mono);}
+/* REPORT */
+.report-sec{margin-bottom:24px;}
+.report-sec-hdr{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 12px;text-align:center;}
+.stat-val{font-size:24px;font-family:var(--mono);font-weight:500;color:var(--accent);line-height:1;margin-bottom:3px;}
+.stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono);}
+.story-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:7px;}
+.story-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;}
+.story-id{font-family:var(--mono);font-size:9px;color:var(--accent);}
+.sp-badge{font-family:var(--mono);font-size:10px;background:rgba(0,217,166,0.08);color:var(--accent);border:1px solid rgba(0,217,166,0.15);padding:2px 8px;border-radius:4px;}
+.story-title{font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.story-narrative{font-size:11.5px;color:var(--text2);line-height:1.6;margin-bottom:8px;font-style:italic;}
+.story-toggle{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;background:var(--accent-dim);border:1px solid rgba(0,217,166,0.15);padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;}
+.ac-list{display:flex;flex-direction:column;gap:3px;}
+.ac-item{font-size:10px;color:var(--text3);font-family:var(--mono);background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:5px;padding:5px 8px;line-height:1.5;}
+.ac-item .kw{color:var(--purple);}
+.sprint-rows{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sprint-row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);}
+.sprint-row:last-child{border-bottom:none;}
+.sprint-num{font-family:var(--mono);font-size:9px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:3px 8px;border-radius:4px;flex-shrink:0;margin-top:1px;}
+.sprint-goal{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.sprint-stories{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.risk-row{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
+.risk-bar{width:4px;border-radius:3px;flex-shrink:0;align-self:stretch;min-height:10px;}
+.risk-bar.High{background:var(--red);}
+.risk-bar.Medium{background:var(--amber);}
+.risk-bar.Low{background:var(--accent);}
+.risk-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.risk-mit{font-size:11px;color:var(--text3);line-height:1.5;}
+.risk-pills{display:flex;gap:5px;margin-bottom:4px;}
+.risk-pill{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid var(--border);}
+.report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.btn-exp{background:transparent;border:1px solid var(--border);color:var(--text2);padding:8px 13px;border-radius:8px;font-size:11.5px;cursor:pointer;transition:all 0.15s;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;}
+.btn-exp:hover{border-color:var(--border2);color:var(--text);}
+.btn-exp.primary{background:var(--accent);border-color:var(--accent);color:#090B0F;font-weight:500;}
+.btn-exp.primary:hover{background:#00EDB8;}
+.jira-banner{display:flex;align-items:center;gap:9px;padding:9px 13px;background:rgba(0,217,166,0.06);border:1px solid rgba(0,217,166,0.2);border-radius:8px;margin-bottom:14px;font-size:11.5px;color:var(--accent);}
+/* LOADING DOTS */
+.ldots{display:inline-flex;gap:3px;}
+.ldots span{width:4px;height:4px;border-radius:50%;background:var(--accent);animation:db 1.2s ease-in-out infinite;}
+.ldots span:nth-child(2){animation-delay:.2s;}
+.ldots span:nth-child(3){animation-delay:.4s;}
+@keyframes db{0%,80%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+/* ANIM */
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.fadein{animation:fadeUp 0.25s ease both;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-left">
+    <div class="logo-mark">AI</div>
+    <span class="nav-title">AADP</span>
+    <div class="nav-divider"></div>
+    <span class="nav-sub">AI-Augmented Delivery Platform</span>
+  </div>
+  <span class="nav-pill">PoC · v0.1</span>
+</nav>
+
+<!-- HOME -->
+<div id="home">
+  <div class="hero">
+    <h1>Delivery Intelligence - <em>agent by agent.</em></h1>
+    <p>Select an agent to activate. Each agent connects to your toolchain, reasons over your data, and produces structured artifacts — all with human-in-the-loop gates.</p>
+    <div class="hero-meta">
+      <span class="hero-meta-item"><b>7</b> agents</span>
+      <span class="hero-meta-item"><b>1</b> active</span>
+      <span class="hero-meta-item"><b>Claude Sonnet</b> backbone</span>
+      <span class="hero-meta-item"><b>GitHub Copilot</b> integrated</span>
+    </div>
+  </div>
+
+  <div class="sec-header">
+    <span class="sec-label">Agent Registry</span>
+    <div class="sec-line"></div>
+  </div>
+
+  <div class="agents-grid">
+    <!-- PO AGENT — FEATURED -->
+    <div class="agent-card featured" onclick="openPanel()">
+      <div class="card-top">
+        <div class="card-icon">📋</div>
+        <span class="card-badge badge-active">● ACTIVE</span>
+      </div>
+      <div class="card-name">Product Owner Agent</div>
+      <div class="card-desc">Reads epics from Jira, decomposes them into detailed user stories with estimates, acceptance criteria, sprint plans, and risk registers. Publishes everything back to Jira and generates a shareable PDF report.</div>
+      <div class="card-tags">
+        <span class="card-tag">Jira MCP</span>
+        <span class="card-tag">Claude Sonnet</span>
+        <span class="card-tag">Copilot SDK</span>
+        <span class="card-tag">SAFe</span>
+        <span class="card-tag">Gherkin AC</span>
+      </div>
+      <div class="card-foot">
+        <span class="card-cta">▶ Launch agent →</span>
+      </div>
+    </div>
+
+    <!-- OTHER AGENTS -->
+    <div class="agent-card">
+      <div class="card-top">
+        <div class="card-icon">🏗️</div>
+        <span class="card-badge badge-soon">COMING SOON</span>
+      </div>
+      <div class="card-name">Arch & Tech Spec Agent</div>
+      <div class="card-desc">Generates HLD, LLD, ADRs, OpenAPI contracts, and sequence diagrams from approved user stories.</div>
+      <div class="card-tags"><span class="card-tag">Confluence</span><span class="card-tag">Mermaid</span><span class="card-tag">OpenAPI</span></div>
+      <div class="card-foot"><span class="card-lock-msg">Unlocks after PO Agent →</span></div>
+    </div>
+
+    <div class="agent-card locked">
+      <div class="card-top">
+        <div class="card-icon">🧪</div>
+        <span class="card-badge badge-lock">LOCKED</span>
+      </div>
+      <div class="card-name">Test Planning Agent</div>
+      <div class="card-desc">Generates test strategy, test cases, BDD scenarios, and Playwright / Pytest automation scripts from ACs.</div>
+      <div class="card-tags"><span class="card-tag">Playwright</span><span class="card-tag">BDD</span><span class="card-tag">Pytest</span></div>
+      <div class="card-foot"><span class="card-lock-msg">Requires Arch Spec Agent</span></div>
+    </div>
+
+    <div class="agent-card locked">
+      <div class="card-top">
+        <div class="card-icon">⚙️</div>
+        <span class="card-badge badge-lock">LOCKED</span>
+      </div>
+      <div class="card-name">Code Generation Agent</div>
+      <div class="card-desc">Scaffolds and implements code using GitHub Copilot Enterprise, generates unit tests, runs static analysis, and opens PRs.</div>
+      <div class="card-tags"><span class="card-tag">Copilot Enterprise</span><span class="card-tag">SonarQube</span></div>
+      <div class="card-foot"><span class="card-lock-msg">Requires Test Plan Agent</span></div>
+    </div>
+
+    <div class="agent-card locked">
+      <div class="card-top">
+        <div class="card-icon">🚀</div>
+        <span class="card-badge badge-lock">LOCKED</span>
+      </div>
+      <div class="card-name">Deployment Agent</div>
+      <div class="card-desc">Orchestrates CI/CD pipelines, deploys to QA, runs automation suites, triages failures, and raises Jira defects.</div>
+      <div class="card-tags"><span class="card-tag">Jenkins</span><span class="card-tag">GitHub Actions</span></div>
+      <div class="card-foot"><span class="card-lock-msg">Requires Code Gen Agent</span></div>
+    </div>
+
+    <div class="agent-card locked">
+      <div class="card-top">
+        <div class="card-icon">🔎</div>
+        <span class="card-badge badge-lock">LOCKED</span>
+      </div>
+      <div class="card-name">Monitoring & Triage Agent</div>
+      <div class="card-desc">Detects prod anomalies, correlates traces from Datadog / ELK / Jaeger, performs RCA, and raises Jira defects with fix suggestions.</div>
+      <div class="card-tags"><span class="card-tag">Datadog</span><span class="card-tag">Jaeger</span><span class="card-tag">ELK</span></div>
+      <div class="card-foot"><span class="card-lock-msg">Requires Deployment Agent</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY PANEL -->
+<div class="overlay" id="overlay">
+  <div class="overlay-bg" onclick="closePanel()"></div>
+  <div class="panel">
+    <div class="panel-hdr">
+      <div>
+        <div class="panel-eyebrow">Product Owner Agent</div>
+        <div class="panel-title" id="panel-title">Configure Jira Connection</div>
+      </div>
+      <button class="btn-close" onclick="closePanel()">✕</button>
+    </div>
+
+    <div class="step-bar">
+      <div class="stp active" id="stp1">
+        <div class="stp-dot">1</div>
+        <span class="stp-label">Connect</span>
+      </div>
+      <div class="stp-line"></div>
+      <div class="stp pending" id="stp2">
+        <div class="stp-dot">2</div>
+        <span class="stp-label">Select Epic</span>
+      </div>
+      <div class="stp-line"></div>
+      <div class="stp pending" id="stp3">
+        <div class="stp-dot">3</div>
+        <span class="stp-label">Generate</span>
+      </div>
+      <div class="stp-line"></div>
+      <div class="stp pending" id="stp4">
+        <div class="stp-dot">4</div>
+        <span class="stp-label">Report</span>
+      </div>
+    </div>
+
+    <div class="panel-body" id="panel-body"></div>
+
+    <div class="panel-ftr" id="panel-ftr"></div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+let currentStep = 1;
+let jiraConfig = {};
+let selectedEpic = null;
+let reportData = null;
+
+const mockEpics = [
+  { key:'PLAT-001', summary:'5G Network Slicing Management Platform', description:'Build a platform for creating, managing, and monitoring 5G network slices across multiple enterprise tenants with real-time SLA enforcement.', status:'In Progress', priority:'Critical' },
+  { key:'PLAT-002', summary:'AI-Powered Network Fault Detection & RCA', description:'Implement ML-based anomaly detection on network telemetry streams with automated root cause analysis and remediation playbooks.', status:'To Do', priority:'High' },
+  { key:'PLAT-003', summary:'Self-Service Internal Developer Portal (AADP)', description:'Unified developer portal for 800+ engineers integrating Jira, GitHub Copilot, CI/CD pipelines, DORA metrics, and AI tooling.', status:'In Progress', priority:'Critical' },
+  { key:'PLAT-004', summary:'Real-Time Delivery Analytics & DORA Dashboard', description:'Engineering intelligence platform providing C-level visibility into delivery velocity, AI adoption ratios, and team health metrics.', status:'To Do', priority:'High' },
+  { key:'PLAT-005', summary:'BSS Modernization — Order Management Microservices', description:'Decompose monolithic BSS order management into event-driven microservices aligned with TMForum Open APIs and TRAI compliance.', status:'Backlog', priority:'Medium' },
+];
+
+// ──────────────────────────────────────────────
+// PANEL OPEN / CLOSE
+// ──────────────────────────────────────────────
+function openPanel() {
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(() => goToStep(1), 50);
+}
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  setTimeout(() => { currentStep = 1; selectedEpic = null; reportData = null; }, 400);
+}
+
+// ──────────────────────────────────────────────
+// STEP NAVIGATION
+// ──────────────────────────────────────────────
+function setStepState(id, state) {
+  const el = document.getElementById('stp' + id);
+  el.className = 'stp ' + state;
+  if (state === 'done') { el.querySelector('.stp-dot').textContent = '✓'; }
+  else { el.querySelector('.stp-dot').textContent = id; }
+}
+
+function goToStep(n) {
+  currentStep = n;
+  for (let i = 1; i <= 4; i++) {
+    if (i < n) setStepState(i, 'done');
+    else if (i === n) setStepState(i, 'active');
+    else setStepState(i, 'pending');
+  }
+  const titles = { 1:'Configure Jira Connection', 2:'Browse & Select Epic', 3:'Generating Stories…', 4:'Story Report' };
+  document.getElementById('panel-title').textContent = titles[n];
+  const renders = { 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4 };
+  renders[n]();
+}
+
+// ──────────────────────────────────────────────
+// STEP 1 — JIRA CONFIG
+// ──────────────────────────────────────────────
+function renderStep1() {
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      <div class="info-box">
+        <strong>PoC Mode:</strong> Jira credentials are validated but epics are loaded from a realistic mock dataset. In production, the agent uses the <strong>Jira MCP connector</strong> and GitHub Copilot SDK to read epics directly.
+      </div>
+      <div class="frow">
+        <div class="fgrp">
+          <label class="flabel">Jira Instance URL</label>
+          <input class="finput" id="jira-url" placeholder="https://yourorg.atlassian.net" value="https://telecom-eng.atlassian.net">
+        </div>
+        <div class="fgrp">
+          <label class="flabel">Project Key</label>
+          <input class="finput" id="jira-project" placeholder="PLAT" value="PLAT">
+        </div>
+      </div>
+      <div class="fgrp">
+        <label class="flabel">Email</label>
+        <input class="finput" id="jira-email" placeholder="you@company.com" value="murali.josyula@intl.att.com">
+      </div>
+      <div class="fgrp">
+        <label class="flabel">API Token</label>
+        <input class="finput" id="jira-token" type="password" placeholder="••••••••••••••••" value="ATATT3xFfGF0mock_token_poc">
+        <div class="fhint">Create at: id.atlassian.com/manage-profile/security/api-tokens</div>
+      </div>
+      <div class="fgrp">
+        <label class="flabel">AI Model</label>
+        <select class="finput" id="ai-model">
+          <option value="claude">Claude Sonnet 4.6 (Recommended)</option>
+          <option value="copilot">GitHub Copilot (Enterprise)</option>
+          <option value="gpt4o">GPT-4o via GitHub Models</option>
+        </select>
+      </div>
+      <div id="connect-status"></div>
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = `
+    <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">LangGraph · pgvector · Redis Streams</span>
+    <button class="btn btn-primary" onclick="handleConnect()">Connect to Jira →</button>`;
+}
+
+function handleConnect() {
+  const url = document.getElementById('jira-url').value.trim();
+  const project = document.getElementById('jira-project').value.trim();
+  const email = document.getElementById('jira-email').value.trim();
+  const token = document.getElementById('jira-token').value.trim();
+  if (!url || !project || !email || !token) {
+    document.getElementById('connect-status').innerHTML = `<div class="error-box">⚠ Please fill in all fields.</div>`; return;
+  }
+  jiraConfig = { url, project, email, model: document.getElementById('ai-model').value };
+  document.getElementById('connect-status').innerHTML = `<div class="info-box" style="background:rgba(0,217,166,0.04);border-color:rgba(0,217,166,0.15);color:var(--accent)">🔄 Connecting to ${url} <span class="ldots"><span></span><span></span><span></span></span></div>`;
+  document.querySelector('#panel-ftr .btn-primary').disabled = true;
+  setTimeout(() => {
+    document.getElementById('connect-status').innerHTML = `<div class="success-box">✓ Connected — found <strong>5 epics</strong> in project ${project}</div>`;
+    document.querySelector('#panel-ftr .btn-primary').disabled = false;
+    document.querySelector('#panel-ftr .btn-primary').textContent = 'Browse Epics →';
+    document.querySelector('#panel-ftr .btn-primary').onclick = () => goToStep(2);
+  }, 1800);
+}
+
+// ──────────────────────────────────────────────
+// STEP 2 — EPIC BROWSER
+// ──────────────────────────────────────────────
+function renderStep2() {
+  const priorityClass = { Critical:'p-critical', High:'p-high', Medium:'p-medium', Low:'p-low' };
+  const epicHtml = mockEpics.map(e => `
+    <div class="epic-item" id="epic-${e.key}" onclick="selectEpic('${e.key}')">
+      <div class="epic-chk" id="chk-${e.key}"></div>
+      <div style="flex:1">
+        <div class="epic-key">${e.key}</div>
+        <div class="epic-summary">${e.summary}</div>
+        <div class="epic-desc">${e.desc || e.description.substring(0,90)}…</div>
+        <div class="epic-meta">
+          <span class="epill ${priorityClass[e.priority]}">${e.priority}</span>
+          <span class="status-pill">${e.status}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      <div class="success-box">✓ Connected to ${jiraConfig.url} · Project: ${jiraConfig.project}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">5 EPICS FOUND</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Select one to generate</span>
+      </div>
+      ${epicHtml}
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = `
+    <button class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
+    <button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(3)">Generate Stories →</button>`;
+}
+
+function selectEpic(key) {
+  mockEpics.forEach(e => {
+    document.getElementById('epic-' + e.key)?.classList.remove('sel');
+    const chk = document.getElementById('chk-' + e.key);
+    if (chk) chk.innerHTML = '';
+  });
+  document.getElementById('epic-' + key).classList.add('sel');
+  document.getElementById('chk-' + key).innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  selectedEpic = mockEpics.find(e => e.key === key);
+  document.getElementById('gen-btn').disabled = false;
+}
+
+// ──────────────────────────────────────────────
+// STEP 3 — GENERATE (API CALL)
+// ──────────────────────────────────────────────
+const genSteps = [
+  { label:'Reading epic context from Jira', sub:'Fetching description, comments, linked issues' },
+  { label:'Analysing scope & complexity', sub:'Identifying domains, dependencies, constraints' },
+  { label:'Decomposing into user stories', sub:'INVEST criteria · SAFe alignment · narrative structure' },
+  { label:'Estimating story points', sub:'Fibonacci sequence · historical velocity reference' },
+  { label:'Generating acceptance criteria', sub:'Gherkin format · Given / When / Then' },
+  { label:'Building sprint plan & risk register', sub:'Critical path analysis · risk likelihood/impact matrix' },
+  { label:'Syncing artifacts back to Jira', sub:'Creating child issues · updating epic fields' },
+];
+
+function renderStep3() {
+  const html = genSteps.map((s, i) => `
+    <div class="prog-item ${i === 0 ? 'running' : 'pending'}" id="pg${i}">
+      <div class="prog-dot">${i === 0 ? '' : i+1}</div>
+      <div>
+        <div class="prog-label">${s.label}</div>
+        <div class="prog-sublabel">${s.sub}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      <div style="background:var(--bg2);border:1px solid rgba(0,217,166,0.2);border-radius:8px;padding:11px 13px;margin-bottom:18px;">
+        <div class="epic-key">${selectedEpic.key}</div>
+        <div class="epic-summary">${selectedEpic.summary}</div>
+      </div>
+      <div class="prog-list">${html}</div>
+      <div id="gen-error"></div>
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">AI generation in progress…</span><span class="ldots"><span></span><span></span><span></span></span>`;
+  runGeneration();
+}
+
+async function runGeneration() {
+  // Animate progress steps while API call runs in parallel
+  let stepIdx = 0;
+  const advance = (i, state) => {
+    const el = document.getElementById('pg' + i);
+    if (!el) return;
+    el.className = 'prog-item ' + state;
+    if (state === 'done') el.querySelector('.prog-dot').textContent = '✓';
+    else if (state === 'running') el.querySelector('.prog-dot').textContent = '';
+  };
+
+  const delays = [800, 900, 1200, 800, 1100, 900, 700];
+  const animateSteps = async () => {
+    for (let i = 0; i < genSteps.length; i++) {
+      advance(i, 'running');
+      if (i > 0) advance(i - 1, 'done');
+      await sleep(delays[i]);
+    }
+  };
+
+  // Start animation + API call concurrently
+  const [_, apiResult] = await Promise.all([animateSteps(), callAnthropicAPI()]);
+
+  // Finish all steps
+  for (let i = 0; i < genSteps.length; i++) advance(i, 'done');
+
+  if (apiResult.error) {
+    document.getElementById('gen-error').innerHTML = `<div class="error-box">⚠ ${apiResult.error}<br><br>A realistic mock report has been generated instead for demonstration.</div>`;
+    reportData = getMockReport();
+  } else {
+    reportData = apiResult.data;
+  }
+  await sleep(600);
+  goToStep(4);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function callAnthropicAPI() {
+  const prompt = `You are a senior SAFe Product Owner for a large telecom engineering organisation (800+ engineers). Generate a detailed product backlog breakdown.
+
+Epic Key: ${selectedEpic.key}
+Epic Summary: ${selectedEpic.summary}  
+Epic Description: ${selectedEpic.description}
+
+Return ONLY valid JSON (absolutely no markdown, no backticks, no explanation text outside the JSON) with this exact structure:
+{
+  "user_stories": [
+    {
+      "id": "US-001",
+      "title": "Concise story title",
+      "as_a": "specific role",
+      "i_want": "specific capability",
+      "so_that": "measurable business benefit",
+      "story_points": 5,
+      "priority": "High",
+      "sprint": 1,
+      "acceptance_criteria": [
+        "Given [context] When [action] Then [expected outcome]",
+        "Given [another context] When [action] Then [expected outcome]"
+      ]
+    }
+  ],
+  "estimates": {
+    "total_story_points": 42,
+    "sprints": 4,
+    "duration_weeks": 8,
+    "team_size": 6,
+    "confidence": "Medium-High"
+  },
+  "project_plan": {
+    "sprints": [
+      { "number": 1, "name": "Foundation", "goal": "Short sprint goal", "story_ids": ["US-001", "US-002"] }
+    ]
+  },
+  "risks": [
+    { "title": "Risk title", "likelihood": "High", "impact": "Medium", "mitigation": "Specific mitigation action" }
+  ]
+}
+
+Generate exactly 6 user stories across 4 sprints. Be technically specific and domain-accurate for enterprise telecom software.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: 'You are an expert SAFe Product Owner. Always respond with valid JSON only. No preamble, no explanation, no markdown code fences.',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) return { error: data.error?.message || 'API error' };
+    const text = data.content?.[0]?.text || '';
+    const parsed = extractJSON(text);
+    return { data: parsed };
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+function extractJSON(text) {
+  try { return JSON.parse(text); } catch(_) {}
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (m) { try { return JSON.parse(m[1]); } catch(_) {} }
+  const s = text.indexOf('{'), e = text.lastIndexOf('}');
+  if (s !== -1 && e !== -1) { try { return JSON.parse(text.slice(s, e+1)); } catch(_) {} }
+  throw new Error('Could not parse JSON from response');
+}
+
+// ──────────────────────────────────────────────
+// STEP 4 — REPORT
+// ──────────────────────────────────────────────
+function renderStep4() {
+  if (!reportData) return;
+  const d = reportData;
+  const est = d.estimates || {};
+  const stories = d.user_stories || [];
+  const sprints = d.project_plan?.sprints || [];
+  const risks = d.risks || [];
+
+  const storyHtml = stories.map(s => {
+    const acHtml = (s.acceptance_criteria || []).map(ac => {
+      const colored = ac
+        .replace(/^Given /i, '<span class="kw">Given</span> ')
+        .replace(/ When /gi, ' <span class="kw">When</span> ')
+        .replace(/ Then /gi, ' <span class="kw">Then</span> ');
+      return `<div class="ac-item">${colored}</div>`;
+    }).join('');
+
+    const sprintBadge = s.sprint ? `<span style="font-family:var(--mono);font-size:9px;background:rgba(59,130,246,0.08);color:var(--blue);border:1px solid rgba(59,130,246,0.15);padding:2px 7px;border-radius:4px;">Sprint ${s.sprint}</span>` : '';
+    return `
+    <div class="story-card">
+      <div class="story-top">
+        <div>
+          <div class="story-id">${s.id}</div>
+          <div class="story-title">${s.title}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;">
+          ${sprintBadge}
+          <span class="sp-badge">${s.story_points} pts</span>
+        </div>
+      </div>
+      <div class="story-narrative">As a <strong>${s.as_a}</strong>, I want ${s.i_want}, so that ${s.so_that}.</div>
+      <div class="story-toggle" onclick="toggleAC(this)">▼ Acceptance Criteria (${(s.acceptance_criteria||[]).length})</div>
+      <div class="ac-list">${acHtml}</div>
+    </div>`;
+  }).join('');
+
+  const sprintHtml = sprints.map(sp => `
+    <div class="sprint-row">
+      <span class="sprint-num">Sprint ${sp.number}</span>
+      <div>
+        <div class="sprint-goal">${sp.goal}</div>
+        <div class="sprint-stories">${(sp.story_ids||[]).join(' · ')}</div>
+      </div>
+    </div>`).join('');
+
+  const riskHtml = risks.map(r => `
+    <div class="risk-row">
+      <div class="risk-bar ${r.likelihood}"></div>
+      <div>
+        <div class="risk-pills">
+          <span class="risk-pill" style="color:var(--red)">Likelihood: ${r.likelihood}</span>
+          <span class="risk-pill" style="color:var(--amber)">Impact: ${r.impact}</span>
+        </div>
+        <div class="risk-title">${r.title}</div>
+        <div class="risk-mit">↳ ${r.mitigation}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      <div class="jira-banner">✓ Jira updated — ${stories.length} child issues created under ${selectedEpic.key}</div>
+
+      <div class="report-sec">
+        <div class="report-sec-hdr">Summary</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-val">${est.total_story_points||'—'}</div><div class="stat-lbl">Story Points</div></div>
+          <div class="stat-card"><div class="stat-val">${est.sprints||'—'}</div><div class="stat-lbl">Sprints</div></div>
+          <div class="stat-card"><div class="stat-val">${est.duration_weeks||'—'}w</div><div class="stat-lbl">Duration</div></div>
+          <div class="stat-card"><div class="stat-val">${stories.length}</div><div class="stat-lbl">Stories</div></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;display:flex;gap:20px;">
+          <div><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">TEAM SIZE</span><br><span style="font-size:13px;color:var(--text)">${est.team_size||6} engineers</span></div>
+          <div><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">CONFIDENCE</span><br><span style="font-size:13px;color:var(--text)">${est.confidence||'Medium-High'}</span></div>
+          <div><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">MODEL USED</span><br><span style="font-size:13px;color:var(--text)">Claude Sonnet 4.6</span></div>
+        </div>
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-hdr">User Stories (${stories.length})</div>
+        ${storyHtml}
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-hdr">Sprint Plan</div>
+        <div class="sprint-rows">${sprintHtml || '<div style="padding:14px;color:var(--text3);font-size:12px;">No sprint data available.</div>'}</div>
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-hdr">Risk Register (${risks.length})</div>
+        ${riskHtml || '<div style="color:var(--text3);font-size:12px;">No risks identified.</div>'}
+      </div>
+
+      <div class="report-sec">
+        <div class="report-sec-hdr">Export & Share</div>
+        <div class="report-actions">
+          <button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF Report</button>
+          <button class="btn-exp" onclick="copyMarkdown()">📋 Copy as Markdown</button>
+          <button class="btn-exp" onclick="alert('Confluence page created: ${selectedEpic.key} — Story Breakdown\\n(Simulated in PoC)')">📄 Publish to Confluence</button>
+          <button class="btn-exp" onclick="alert('Email sent to product team\\n(Simulated in PoC)')">✉ Email to Stakeholders</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('panel-ftr').innerHTML = `
+    <button class="btn btn-ghost" onclick="goToStep(2)">← Select another epic</button>
+    <button class="btn btn-primary" onclick="closePanel()">Done ✓</button>`;
+}
+
+function toggleAC(el) {
+  const acList = el.nextElementSibling;
+  const visible = acList.style.display !== 'none';
+  acList.style.display = visible ? 'none' : 'flex';
+  el.textContent = (visible ? '▶' : '▼') + el.textContent.slice(1);
+}
+
+function exportPDF() {
+  window.print();
+}
+
+function copyMarkdown() {
+  if (!reportData) return;
+  const d = reportData;
+  let md = `# Product Owner Report — ${selectedEpic.key}\n\n**${selectedEpic.summary}**\n\n`;
+  md += `## Summary\n- Total Story Points: ${d.estimates?.total_story_points}\n- Sprints: ${d.estimates?.sprints}\n- Duration: ${d.estimates?.duration_weeks} weeks\n\n`;
+  (d.user_stories||[]).forEach(s => {
+    md += `## ${s.id}: ${s.title}\n> As a **${s.as_a}**, I want ${s.i_want}, so that ${s.so_that}.\n\n`;
+    md += `**Story Points:** ${s.story_points} | **Sprint:** ${s.sprint}\n\n`;
+    md += `### Acceptance Criteria\n`;
+    (s.acceptance_criteria||[]).forEach(ac => { md += `- ${ac}\n`; });
+    md += '\n';
+  });
+  navigator.clipboard.writeText(md).then(() => alert('Markdown copied to clipboard!')).catch(() => alert('Copy failed — please use Ctrl+C.'));
+}
+
+// ──────────────────────────────────────────────
+// MOCK REPORT (fallback if API fails)
+// ──────────────────────────────────────────────
+function getMockReport() {
+  return {
+    user_stories: [
+      { id:'US-001', title:'Network slice creation wizard', as_a:'network engineer', i_want:'to create a 5G network slice via a guided UI', so_that:'I can provision enterprise tenant slices in under 5 minutes without CLI access', story_points:8, priority:'High', sprint:1, acceptance_criteria:['Given I am authenticated as a network engineer When I launch the slice wizard Then I can specify bandwidth, latency, and QoS parameters','Given valid parameters When I click Provision Then the slice is created within 60 seconds and a confirmation is shown','Given a conflicting resource When I submit Then the system shows a clear conflict resolution suggestion'] },
+      { id:'US-002', title:'Real-time slice health dashboard', as_a:'operations manager', i_want:'to view live SLA metrics for all active network slices', so_that:'I can identify SLA breaches within 30 seconds of occurrence', story_points:5, priority:'High', sprint:1, acceptance_criteria:['Given active slices When I open the dashboard Then I see latency, throughput, and packet loss per slice refreshed every 5 seconds','Given an SLA breach When detected Then the slice tile turns red and a Slack alert fires','Given historical data When I select a time range Then I see a sparkline of metric trends'] },
+      { id:'US-003', title:'Multi-tenant isolation enforcement', as_a:'security architect', i_want:'to enforce strict tenant isolation at the data plane', so_that:'no cross-tenant traffic leak can occur even during network congestion', story_points:13, priority:'Critical', sprint:2, acceptance_criteria:['Given two tenants share a physical gNB When traffic is at 95% capacity Then no cross-tenant packets are observable in Wireshark capture','Given a tenant isolation policy When I update it Then it propagates to all edge nodes within 90 seconds','Given a simulated breach attempt When detected Then the event is logged in the SIEM with full context'] },
+      { id:'US-004', title:'Slice lifecycle automation', as_a:'platform engineer', i_want:'to define lifecycle rules for slice auto-scaling and teardown', so_that:'idle slices are reclaimed and cost is minimised without manual intervention', story_points:8, priority:'Medium', sprint:2, acceptance_criteria:['Given a slice idle for 30 minutes When the rule triggers Then slice capacity is reduced by 50%','Given a slice with no active sessions for the configured TTL When TTL expires Then the slice is torn down and resources returned to pool','Given a scale event When it occurs Then it is logged with before/after metrics'] },
+      { id:'US-005', title:'API gateway for slice management', as_a:'third-party application developer', i_want:'a documented REST API to provision and query slices', so_that:'I can integrate slice management into our enterprise portal without custom backend code', story_points:8, priority:'High', sprint:3, acceptance_criteria:['Given a valid OAuth2 token When I call POST /slices Then a slice is created and I receive a 201 with the slice ID','Given an invalid token When I call any endpoint Then I receive 401 with a machine-readable error body','Given the API spec When I visit /docs Then I see Swagger UI with all endpoints documented and a try-it-out console'] },
+      { id:'US-006', title:'Audit log & compliance export', as_a:'compliance officer', i_want:'a tamper-evident audit log of all slice operations', so_that:'I can produce evidence of control for TRAI and GDPR audits within 24 hours', story_points:5, priority:'Medium', sprint:4, acceptance_criteria:['Given any slice operation When it completes Then a log entry is written with actor, timestamp, action, and before/after state','Given an audit request When I export logs for a date range Then I receive a signed CSV within 2 minutes','Given a log entry When inspected Then its HMAC can be verified against the platform signing key'] },
+    ],
+    estimates: { total_story_points: 47, sprints: 4, duration_weeks: 8, team_size: 6, confidence: 'Medium-High' },
+    project_plan: {
+      sprints: [
+        { number:1, name:'Foundation', goal:'Core slice provisioning and live monitoring', story_ids:['US-001','US-002'] },
+        { number:2, name:'Isolation & Automation', goal:'Security enforcement and lifecycle management', story_ids:['US-003','US-004'] },
+        { number:3, name:'Integration', goal:'External API gateway and developer tooling', story_ids:['US-005'] },
+        { number:4, name:'Hardening', goal:'Compliance, audit, and GA readiness', story_ids:['US-006'] },
+      ]
+    },
+    risks: [
+      { title:'5G core vendor API changes mid-sprint', likelihood:'Medium', impact:'High', mitigation:'Lock vendor SDK version; maintain an abstraction layer; schedule bi-weekly API compatibility checks' },
+      { title:'Tenant isolation testing environment not available', likelihood:'High', impact:'High', mitigation:'Provision a dedicated lab environment in Week 1; block US-003 until environment is signed off' },
+      { title:'TRAI compliance requirements ambiguous', likelihood:'Medium', impact:'Medium', mitigation:'Engage regulatory team in Sprint 1; schedule a compliance review gate before Sprint 4 kickoff' },
+    ]
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "agentId": "monitor",
+  "agentName": "Monitoring & Triage Agent",
+  "systemPrompt": "You are an expert SRE engineer. Return valid JSON only.",
+  "userPromptTemplate": "You are a Senior SRE for a large telecom org. Analyse these services and generate an incident triage report:\n\n{{serviceSummary}}\n\nReturn ONLY valid JSON with: anomalies[], traces[], rca (probable_cause, confidence, evidence[], affected_services[], blast_radius, timeline[]), correlations[], recommendations[] (with code_suggestion), jira_defects[], summary.",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}

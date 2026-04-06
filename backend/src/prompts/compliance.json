@@ -1,0 +1,7 @@
+{
+  "agentId": "compliance",
+  "agentName": "Compliance & Governance Agent",
+  "systemPrompt": "You are an expert compliance officer. Return valid JSON only.",
+  "userPromptTemplate": "You are a Compliance & Governance Officer for a large telecom org. Generate a compliance assessment from these delivery artifacts:\n\n{{itemSummary}}\n\nReturn ONLY valid JSON with: regulatory_mapping (frameworks[] with controls[]), audit_trail (entries[]), policy_enforcement (policies[]), license_audit (details[]), change_request, evidence_package (documents[]), summary.",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}

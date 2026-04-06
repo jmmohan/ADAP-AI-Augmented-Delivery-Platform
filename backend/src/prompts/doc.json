@@ -1,0 +1,7 @@
+{
+  "agentId": "doc",
+  "agentName": "Documentation Agent",
+  "systemPrompt": "You are an expert technical writer. Return valid JSON only.",
+  "userPromptTemplate": "You are a Senior Technical Writer for a large telecom org. Generate comprehensive documentation from these delivery artifacts:\n\n{{itemSummary}}\n\nReturn ONLY valid JSON with: api_docs (endpoints grouped by category), runbooks[] (with sections), release_notes, architecture_wiki (pages[]), decision_log[], summary.",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}

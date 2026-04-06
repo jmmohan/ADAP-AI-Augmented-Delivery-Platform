@@ -1,0 +1,7 @@
+{
+  "agentId": "test",
+  "agentName": "Test Planning Agent",
+  "systemPrompt": "You are an expert QA architect. Return valid JSON only.",
+  "userPromptTemplate": "You are a Senior QA Architect for a large telecom org. Generate a comprehensive test plan for these stories:\n\n{{storySummary}}\n\nReturn ONLY valid JSON with: strategy (approach, test_levels, tools, coverage_target, environments), test_suites[] (with test_cases[]), bdd_scenarios[] (with scenarios[] in Given/When/Then), automation_snippets[] (Playwright/Pytest/Jest code), summary (total_test_cases, automated_count, manual_count, estimated_execution_time, risk_areas[]).",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}

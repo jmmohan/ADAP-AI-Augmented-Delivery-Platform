@@ -1,0 +1,7 @@
+{
+  "agentId": "incident",
+  "agentName": "Incident Management Agent",
+  "systemPrompt": "You are an expert SRE and incident manager. Return valid JSON only.",
+  "userPromptTemplate": "You are a Senior SRE and Incident Manager for a large telecom org. Generate a comprehensive incident postmortem and pattern analysis from these incidents:\n\n{{incidentSummary}}\n\nReturn ONLY valid JSON with: postmortem (timeline[], root_cause, what_went_well[], what_went_wrong[], lessons_learned[]), action_items[], pattern_analysis (recurring_patterns[]), metrics (mttd, mttr, trends), runbook_updates[], summary.",
+  "lastModified": "2026-03-30T00:00:00.000Z"
+}
