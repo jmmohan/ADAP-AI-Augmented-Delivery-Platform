@@ -295,10 +295,8 @@ export async function validateLocalFolder({ folderPath }) {
     }
   } catch { /* not a git repo */ }
 
-  // Open in VS Code
-  await new Promise((resolve) => {
-    exec(`code "${resolved}"`, () => resolve());
-  });
+  // Open in VS Code (fire-and-forget — don't block the HTTP response)
+  exec(`code "${resolved}"`, () => {});
 
   return {
     folderPath: resolved,

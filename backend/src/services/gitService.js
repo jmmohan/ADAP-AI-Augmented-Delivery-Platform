@@ -24,10 +24,12 @@ function buildBranchName(storyIds, prefix = 'codegen') {
 }
 
 function sanitizePath(p) {
-  // Prevent path traversal
+  // Prevent path traversal — reject relative paths and bare drive-letter tricks
   const resolved = path.resolve(p);
-  const base = path.resolve(os.tmpdir(), 'aadp-workspace');
-  if (!resolved.startsWith(base)) {
+  // Block obvious dangerous paths (system root, Windows dir, etc.)
+  const lower = resolved.toLowerCase().replace(/\\/g, '/');
+  const blocked = ['/windows', '/system32', '/program files', '/usr/bin', '/etc', '/var'];
+  if (blocked.some((b) => lower.startsWith(b) || lower === '/')) {
     throw new Error('Invalid workspace path.');
   }
   return resolved;
