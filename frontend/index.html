@@ -19,6 +19,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="settings-btn" onclick="openSettings()" title="Platform Settings">⚙ Settings</button>
         <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">☀ Light</button>
         <span class="version-pill">PoC · v0.2</span>
       </div>
@@ -40,9 +41,9 @@
             <li><a href="#" class="nav-link active" onclick="selectAgent('se', 0)">📋 Product Owner</a></li>
             <li><a href="#" class="nav-link" onclick="selectAgent('se', 1)">🏗️ Arch & Tech Spec</a></li>
             <li><a href="#" class="nav-link" onclick="selectAgent('se', 2)">🏛️ Architecture Review</a></li>
-            <li><a href="#" class="nav-link" onclick="selectAgent('se', 3)">🔍 Code Review</a></li>
-            <li><a href="#" class="nav-link" onclick="selectAgent('se', 4)">🧪 Test Planning</a></li>
-            <li><a href="#" class="nav-link" onclick="selectAgent('se', 5)">⚙️ Code Generation</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 3)">🧪 Test Planning</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 4)">⚙️ Code Generation</a></li>
+            <li><a href="#" class="nav-link" onclick="selectAgent('se', 5)">🔍 Code Review</a></li>
             <li><a href="#" class="nav-link" onclick="selectAgent('se', 6)">🚀 Deployment</a></li>
             <li><a href="#" class="nav-link" onclick="selectAgent('se', 7)">🔎 Monitoring & Triage</a></li>
             <li><a href="#" class="nav-link" onclick="selectAgent('se', 8)">🔒 Security</a></li>
@@ -143,14 +144,6 @@
       </div>
 
       <div class="agent-card" onclick="selectAgent('se', 3)">
-        <div class="card-top"><div class="card-icon">🔍</div><span class="card-badge badge-active">● ACTIVE</span></div>
-        <div class="card-name">Code Review Agent</div>
-        <div class="card-desc">Clones Git repos, scans source files with AI for security, reliability and style issues, generates fixes, and pushes corrected code via PR.</div>
-        <div class="card-tags"><span class="card-tag">GitHub</span><span class="card-tag">AI Review</span><span class="card-tag">Auto-Fix</span></div>
-        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('codereview')" title="Edit Agent Prompt">✎ Prompt</button></div>
-      </div>
-
-      <div class="agent-card" onclick="selectAgent('se', 4)">
         <div class="card-top"><div class="card-icon">🧪</div><span class="card-badge badge-active">● ACTIVE</span></div>
         <div class="card-name">Test Planning Agent</div>
         <div class="card-desc">Generates test strategy, test cases, BDD scenarios, and Playwright / Pytest automation scripts from ACs.</div>
@@ -158,12 +151,20 @@
         <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('test')" title="Edit Agent Prompt">✎ Prompt</button></div>
       </div>
 
-      <div class="agent-card" onclick="selectAgent('se', 5)">
+      <div class="agent-card" onclick="selectAgent('se', 4)">
         <div class="card-top"><div class="card-icon">⚙️</div><span class="card-badge badge-active">● ACTIVE</span></div>
         <div class="card-name">Code Generation Agent</div>
         <div class="card-desc">Scaffolds and implements code using GitHub Copilot Enterprise, generates unit tests, runs static analysis, and opens PRs.</div>
         <div class="card-tags"><span class="card-tag">Copilot Enterprise</span><span class="card-tag">SonarQube</span></div>
         <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('code')" title="Edit Agent Prompt">✎ Prompt</button></div>
+      </div>
+
+      <div class="agent-card" onclick="selectAgent('se', 5)">
+        <div class="card-top"><div class="card-icon">🔍</div><span class="card-badge badge-active">● ACTIVE</span></div>
+        <div class="card-name">Code Review Agent</div>
+        <div class="card-desc">Clones Git repos, scans source files with AI for security, reliability and style issues, generates fixes, and pushes corrected code via PR.</div>
+        <div class="card-tags"><span class="card-tag">GitHub</span><span class="card-tag">AI Review</span><span class="card-tag">Auto-Fix</span></div>
+        <div class="card-foot"><span class="card-cta">▶ Launch agent →</span><button class="btn-prompt-edit" onclick="event.stopPropagation();openPromptEditor('codereview')" title="Edit Agent Prompt">✎ Prompt</button></div>
       </div>
 
       <div class="agent-card" onclick="selectAgent('se', 6)">
@@ -391,6 +392,24 @@
       </div>
       <div class="prompt-editor-body" id="prompt-editor-body"></div>
       <div class="prompt-editor-ftr" id="prompt-editor-ftr"></div>
+    </div>
+  </div>
+
+  <!-- Global Settings Panel -->
+  <div class="prompt-overlay" id="settings-overlay">
+    <div class="prompt-overlay-bg" onclick="closeSettings()"></div>
+    <div class="prompt-editor" style="max-width:520px;">
+      <div class="prompt-editor-hdr">
+        <div>
+          <div class="prompt-editor-eyebrow">Platform Configuration</div>
+          <div class="prompt-editor-title">Settings</div>
+        </div>
+        <button class="btn-close" onclick="closeSettings()">✕</button>
+      </div>
+      <div class="prompt-editor-body" id="settings-body">
+        <div class="info-box">Loading settings…</div>
+      </div>
+      <div class="prompt-editor-ftr" id="settings-ftr"></div>
     </div>
   </div>
 

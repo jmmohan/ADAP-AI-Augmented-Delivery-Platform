@@ -7,11 +7,11 @@ const state = {
   activeAgent: null,
   currentStep: 1,
   po: { jiraConfig: null, epics: [], selectedEpic: null, selectedEpics: [], reportData: null, reportSource: 'mock' },
-  arch: { stories: [], selectedIds: [], reportData: null, reportSource: 'mock' },
-  review: { items: [], selectedIds: [], reportData: null, reportSource: 'mock' },
+  arch: { epics: [], selectedEpicKeys: [], stories: [], selectedIds: [], reportData: null, reportSource: 'mock' },
+  review: { epics: [], selectedEpicKeys: [], items: [], selectedIds: [], reportData: null, reportSource: 'mock', approved: false },
   codereview: { mode: null, gitConfig: null, localGit: null, clonedPath: null, fileTree: [], selectedFiles: [], reviewData: null, reviewSource: 'mock', selectedIssues: [], fixes: null, fixSource: 'mock', fixesApplied: false, appliedFiles: [], pushedBranch: null },
-  test: { stories: [], selectedIds: [], reportData: null, reportSource: 'mock' },
-  code: { stories: [], selectedIds: [], reportData: null, reportSource: 'mock', gitConfig: null, clonedPath: null, pushedBranch: null },
+  test: { epics: [], selectedEpicKeys: [], stories: [], selectedIds: [], reportData: null, reportSource: 'mock', approved: false },
+  code: { mode: null, stories: [], selectedIds: [], reportData: null, reportSource: 'mock', gitConfig: null, localGit: null, clonedPath: null, pushedBranch: null, approved: false },
   deploy: { artifacts: [], selectedIds: [], reportData: null, reportSource: 'mock' },
   monitor: { services: [], selectedIds: [], reportData: null, reportSource: 'mock' },
   security: { items: [], selectedIds: [], reportData: null, reportSource: 'mock' },
@@ -25,7 +25,7 @@ const state = {
 };
 
 const THEME_STORAGE_KEY = 'aadp-theme';
-const agentIds = ['po', 'arch', 'review', 'codereview', 'test', 'code', 'deploy', 'monitor', 'security', 'doc', 'release', 'compliance', 'perf', 'incident'];
+const agentIds = ['po', 'arch', 'review', 'test', 'code', 'codereview', 'deploy', 'monitor', 'security', 'doc', 'release', 'compliance', 'perf', 'incident'];
 const deAgentIds = ['discovery', 'modelling', 'governance', 'pipeline-design', 'etl-codegen', 'streaming', 'dq', 'query-opt', 'lineage', 'de-monitoring', 'cost'];
 
 // -------------------- Agent Configurations --------------------
@@ -51,6 +51,7 @@ const agentConfigs = {
   arch: {
     name: 'Arch & Tech Spec Agent',
     steps: [
+      { label: 'Select Epics', title: 'Select Epics' },
       { label: 'Select Stories', title: 'Select User Stories' },
       { label: 'Generate', title: 'Generating Architecture…' },
       { label: 'Report', title: 'Architecture Specification' }
@@ -67,6 +68,7 @@ const agentConfigs = {
   review: {
     name: 'Architecture Review Agent',
     steps: [
+      { label: 'Select Epics', title: 'Select Epics' },
       { label: 'Select Artifacts', title: 'Select Architecture Artifacts to Review' },
       { label: 'Review', title: 'Reviewing Architecture…' },
       { label: 'Report', title: 'Architecture Review Report' }
@@ -101,6 +103,7 @@ const agentConfigs = {
   test: {
     name: 'Test Planning Agent',
     steps: [
+      { label: 'Select Epics', title: 'Select Epics' },
       { label: 'Select Stories', title: 'Select Stories to Test' },
       { label: 'Generate', title: 'Generating Test Plan…' },
       { label: 'Report', title: 'Test Plan Report' }
@@ -116,11 +119,13 @@ const agentConfigs = {
   },
   code: {
     name: 'Code Generation Agent',
+    genTargetStep: 4,
     steps: [
-      { label: 'Git Config', title: 'Connect to GitHub Repository' },
+      { label: 'Workspace', title: 'Configure Workspace' },
       { label: 'Select Stories', title: 'Select Stories to Implement' },
       { label: 'Generate', title: 'Generating Code…' },
-      { label: 'Report', title: 'Code Generation Report' }
+      { label: 'Review', title: 'Review Generated Code' },
+      { label: 'Publish', title: 'Approve & Publish' }
     ],
     genSteps: [
       { label: 'Analysing story requirements', sub: 'Extracting interfaces, contracts, data models' },
@@ -421,11 +426,11 @@ function goToStep(nextStep) {
 
   const renderers = {
     po: [renderPoStep1, renderPoStep2, renderPoStep3, renderPoStep4],
-    arch: [renderArchStep1, renderArchStep2, renderArchStep3],
-    review: [renderReviewStep1, renderReviewStep2, renderReviewStep3],
+    arch: [renderArchStep1, renderArchStep2, renderArchStep3, renderArchStep4],
+    review: [renderReviewStep1, renderReviewStep2, renderReviewStep3, renderReviewStep4],
     codereview: [renderCodeReviewStep1, renderCodeReviewStep2, renderCodeReviewStep3, renderCodeReviewStep4, renderCodeReviewStep5],
-    test: [renderTestStep1, renderTestStep2, renderTestStep3],
-    code: [renderCodeStep1, renderCodeStep2, renderCodeStep3, renderCodeStep4],
+    test: [renderTestStep1, renderTestStep2, renderTestStep3, renderTestStep4],
+    code: [renderCodeStep1, renderCodeStep2, renderCodeStep3, renderCodeStep4, renderCodeStep5],
     deploy: [renderDeployStep1, renderDeployStep2, renderDeployStep3],
     monitor: [renderMonitorStep1, renderMonitorStep2, renderMonitorStep3],
     security: [renderSecurityStep1, renderSecurityStep2, renderSecurityStep3],
@@ -477,7 +482,7 @@ async function runGenAnimation(agentId, apiCall, onSuccess) {
     for (let i = 0; i < genSteps.length; i++) setProgress(i, 'done');
     onSuccess(result);
     await sleep(300);
-    goToStep(agentConfigs[agentId].steps.length);
+    goToStep(agentConfigs[agentId].genTargetStep || agentConfigs[agentId].steps.length);
   } catch (error) {
     document.getElementById('gen-error').innerHTML = `<div class="error-box">⚠ ${error.message}</div>`;
     document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(1)">← Back</button><button class="btn btn-primary" onclick="goToStep(${state.currentStep})">Retry →</button>`;
@@ -618,27 +623,67 @@ async function apiPut(path, body) {
 // ============================================================
 //  PO AGENT
 // ============================================================
-function renderPoStep1() {
+async function renderPoStep1() {
+  // Check if global settings already have Jira configured
+  let globalSettings = null;
+  try { globalSettings = await apiGet('/api/settings'); } catch { /* ignore */ }
+
+  const gj = globalSettings?.jira;
+  const hasGlobal = gj?.connected === true;
+  const gModel = globalSettings?.model || 'gpt-4o';
+
+  const jiraUrl = hasGlobal ? gj.url : '';
+  const jiraProject = hasGlobal ? gj.project : '';
+  const jiraEmail = hasGlobal ? gj.email : '';
+  const readonlyAttr = hasGlobal ? 'readonly style="opacity:0.7;cursor:not-allowed;"' : '';
+  const tokenPlaceholder = hasGlobal ? '••••••• (from Settings)' : '••••••••••••••••';
+
+  const globalNote = hasGlobal
+    ? `<div class="success-box">Jira credentials loaded from <strong>Settings</strong>. To change, go to <strong>⚙ Settings</strong> in the top nav.</div>`
+    : `<div class="info-box"><strong>Platform Mode:</strong> Connects to your Jira instance to fetch real epics. You can also configure Jira globally via <strong>⚙ Settings</strong> in the top nav.</div>`;
+
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
-      <div class="info-box"><strong>Platform Mode:</strong> Connects to your Jira instance to fetch real epics. AI generation powered by GitHub Models (GPT-4o) when server key is configured. Falls back to mock data if Jira is unreachable.</div>
+      ${globalNote}
       <div class="frow">
-        <div class="fgrp"><label class="flabel">Jira Instance URL</label><input class="finput" id="jira-url" placeholder="https://yourorg.atlassian.net" value="https://telecom-eng.atlassian.net"></div>
-        <div class="fgrp"><label class="flabel">Project Key</label><input class="finput" id="jira-project" placeholder="PLAT" value="PLAT"></div>
+        <div class="fgrp"><label class="flabel">Jira Instance URL</label><input class="finput" id="jira-url" placeholder="https://yourorg.atlassian.net" value="${jiraUrl}" ${readonlyAttr}></div>
+        <div class="fgrp"><label class="flabel">Project Key</label><input class="finput" id="jira-project" placeholder="PLAT" value="${jiraProject}" ${readonlyAttr}></div>
       </div>
-      <div class="fgrp"><label class="flabel">Email</label><input class="finput" id="jira-email" placeholder="you@company.com" value="murali.josyula@intl.att.com"></div>
-      <div class="fgrp"><label class="flabel">API Token</label><input class="finput" id="jira-token" type="password" placeholder="••••••••••••••••" value="ATATT3xFfGF0mock_token_poc"></div>
+      <div class="fgrp"><label class="flabel">Email</label><input class="finput" id="jira-email" placeholder="you@company.com" value="${jiraEmail}" ${readonlyAttr}></div>
+      <div class="fgrp"><label class="flabel">API Token</label><input class="finput" id="jira-token" type="password" placeholder="${tokenPlaceholder}" value="" ${readonlyAttr}></div>
       <div class="fgrp"><label class="flabel">AI Model</label>
         <select class="finput" id="ai-model">
-          <option value="gpt-4o">GPT-4o (Recommended)</option>
-          <option value="gpt-4o-mini">GPT-4o Mini</option>
+          <option value="gpt-4o" ${gModel === 'gpt-4o' ? 'selected' : ''}>GPT-4o (Recommended)</option>
+          <option value="gpt-4o-mini" ${gModel === 'gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini</option>
         </select>
       </div>
       <div id="connect-status"></div>
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = `
-    <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Node.js API · Service Layer · Adapter Ready</span>
-    <button class="btn btn-primary" onclick="handleConnect()">Connect to Jira →</button>`;
+
+  if (hasGlobal) {
+    // Auto-connect using stored credentials on the backend (token never leaves server)
+    document.getElementById('connect-status').innerHTML = '<div class="info-box">🔄 Connecting with saved credentials…</div>';
+    document.getElementById('panel-ftr').innerHTML = '<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Using global settings</span><button class="btn btn-primary" disabled>Connecting…</button>';
+    try {
+      const conn = await apiPost('/api/po-agent/connect-global', {});
+      const epics = await apiGet('/api/po-agent/epics');
+      state.po.epics = epics.items || [];
+      state.po.jiraConfig = { url: gj.url, project: gj.project, email: gj.email, model: gModel };
+      const sourceLabel = conn.source === 'jira'
+        ? `✓ Connected to Jira as <strong>${conn.user || gj.email}</strong> — found <strong>${conn.epicsCount}</strong> epics in project ${gj.project}`
+        : `✓ Connected (mock mode) — ${conn.message || 'using mock data'} — showing <strong>${conn.epicsCount}</strong> sample epics`;
+      const boxClass = conn.source === 'jira' ? 'success-box' : 'info-box';
+      document.getElementById('connect-status').innerHTML = `<div class="${boxClass}">${sourceLabel}</div>`;
+      document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Connected via Settings</span><button class="btn btn-primary" onclick="goToStep(2)">Browse Epics →</button>`;
+    } catch (error) {
+      document.getElementById('connect-status').innerHTML = `<div class="error-box">⚠ Auto-connect failed: ${error.message}. Update credentials in ⚙ Settings.</div>`;
+      document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Connection failed</span><button class="btn btn-primary" onclick="openSettings()">Open Settings</button>`;
+    }
+  } else {
+    document.getElementById('panel-ftr').innerHTML = `
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Node.js API · Service Layer · Adapter Ready</span>
+      <button class="btn btn-primary" onclick="handleConnect()">Connect to Jira →</button>`;
+  }
 }
 
 async function handleConnect() {
@@ -865,31 +910,133 @@ async function copyPoMarkdown() {
 //  ARCH & TECH SPEC AGENT
 // ============================================================
 async function renderArchStep1() {
-  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Loading user stories…</div></div>';
+  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Checking Jira connection and loading epics…</div></div>';
   document.getElementById('panel-ftr').innerHTML = '';
+
+  // Check if PO agent has a live Jira connection
+  let connStatus = { connected: false };
   try {
-    const result = await apiGet('/api/arch-agent/stories');
+    connStatus = await apiGet('/api/arch-agent/connection');
+  } catch { /* ignore */ }
+
+  // Load epics (from Jira if connected, or PO's mock/cache)
+  try {
+    const result = await apiGet('/api/arch-agent/epics');
+    state.arch.epics = result.items || [];
+  } catch {
+    state.arch.epics = [];
+  }
+
+  state.arch.selectedEpicKeys = [];
+
+  const sourceLabel = connStatus.connected
+    ? `<div class="success-box">Connected to Jira (project: <strong>${connStatus.project}</strong>) — showing <strong>${state.arch.epics.length}</strong> epics. Select epics to load their user stories for architecture generation.</div>`
+    : `<div class="info-box"><strong>Jira not connected.</strong> Connect via the Product Owner agent first for live data. Showing cached/mock epics below.</div>`;
+
+  const priorityClass = { Critical: 'p-critical', High: 'p-high', Medium: 'p-medium', Low: 'p-low' };
+  const epicHtml = state.arch.epics
+    .map(
+      (epic) => `
+      <div class="epic-item" id="arch-epic-${epic.key}" onclick="toggleArchEpic('${epic.key}')">
+        <div class="epic-chk" id="arch-epic-chk-${epic.key}"></div>
+        <div style="flex:1">
+          <div class="epic-key">${epic.key}</div>
+          <div class="epic-summary">${epic.summary}</div>
+          <div class="epic-desc">${(epic.description || '').slice(0, 120)}${(epic.description || '').length > 120 ? '…' : ''}</div>
+          <div class="epic-meta">
+            <span class="epill ${priorityClass[epic.priority] || 'p-medium'}">${epic.priority || 'Medium'}</span>
+            <span class="sp-badge">${epic.status || ''}</span>
+          </div>
+        </div>
+      </div>`
+    )
+    .join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      ${sourceLabel}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.arch.epics.length} EPICS</span>
+        <button class="btn-exp" onclick="selectAllArchEpics()" style="padding:4px 10px;font-size:10px;">Select All</button>
+      </div>
+      ${epicHtml || '<div class="info-box">No epics found. Please connect to Jira via the Product Owner agent.</div>'}
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">HLD · LLD · ADR · OpenAPI · Mermaid</span><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(2)">Load Stories →</button>`;
+}
+
+function toggleArchEpic(key) {
+  const idx = state.arch.selectedEpicKeys.indexOf(key);
+  if (idx >= 0) state.arch.selectedEpicKeys.splice(idx, 1);
+  else state.arch.selectedEpicKeys.push(key);
+
+  const el = document.getElementById(`arch-epic-${key}`);
+  const chk = document.getElementById(`arch-epic-chk-${key}`);
+  if (el) el.classList.toggle('sel', state.arch.selectedEpicKeys.includes(key));
+  if (chk) {
+    chk.innerHTML = state.arch.selectedEpicKeys.includes(key)
+      ? '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : '';
+  }
+  const btn = document.getElementById('gen-btn');
+  if (btn) btn.disabled = state.arch.selectedEpicKeys.length === 0;
+}
+
+function selectAllArchEpics() {
+  const allKeys = state.arch.epics.map((e) => e.key);
+  const allSelected = allKeys.every((k) => state.arch.selectedEpicKeys.includes(k));
+  state.arch.selectedEpicKeys = allSelected ? [] : [...allKeys];
+  allKeys.forEach((k) => {
+    const el = document.getElementById(`arch-epic-${k}`);
+    const chk = document.getElementById(`arch-epic-chk-${k}`);
+    const selected = state.arch.selectedEpicKeys.includes(k);
+    if (el) el.classList.toggle('sel', selected);
+    if (chk) {
+      chk.innerHTML = selected
+        ? '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        : '';
+    }
+  });
+  const btn = document.getElementById('gen-btn');
+  if (btn) btn.disabled = state.arch.selectedEpicKeys.length === 0;
+}
+
+async function renderArchStep2() {
+  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Loading user stories for selected epics…</div></div>';
+  document.getElementById('panel-ftr').innerHTML = '';
+
+  const epicKeys = state.arch.selectedEpicKeys;
+  let storySource = 'mock';
+
+  try {
+    const result = await apiPost('/api/arch-agent/stories-by-epics', { epicKeys });
     state.arch.stories = result.items || [];
+    storySource = result.source || 'mock';
   } catch {
     state.arch.stories = [];
   }
   state.arch.selectedIds = [];
+
+  const sourceNote = storySource === 'jira'
+    ? `<div class="success-box">Loaded <strong>${state.arch.stories.length}</strong> user stories from Jira for epics: ${epicKeys.join(', ')}</div>`
+    : `<div class="info-box">Showing mock stories (Jira not connected or no stories found under selected epics).</div>`;
+
   const html = state.arch.stories
     .map(
       (s) =>
-        `<div class="epic-item" id="arch-${s.id}" onclick="toggleItemSelection('arch','${s.id}')"><div class="epic-chk" id="arch-chk-${s.id}"></div><div style="flex:1"><div class="epic-key">${s.id}</div><div class="epic-summary">${s.title}</div><div class="epic-meta"><span class="sp-badge">${s.story_points} pts</span><span class="epill ${s.priority === 'High' ? 'p-high' : 'p-medium'}">${s.priority}</span></div></div></div>`
+        `<div class="epic-item" id="arch-${s.id}" onclick="toggleItemSelection('arch','${s.id}')"><div class="epic-chk" id="arch-chk-${s.id}"></div><div style="flex:1"><div class="epic-key">${s.id}</div><div class="epic-summary">${s.title}</div><div class="epic-meta"><span class="sp-badge">${s.story_points} pts</span><span class="epill ${s.priority === 'High' ? 'p-high' : 'p-medium'}">${s.priority}</span>${s.parentKey ? `<span class="card-tag">${s.parentKey}</span>` : ''}</div></div></div>`
     )
     .join('');
+
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
-      <div class="info-box">Select user stories from PO Agent output to generate architecture specs — HLD, LLD, ADRs, OpenAPI contracts, and Mermaid diagrams.</div>
+      ${sourceNote}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.arch.stories.length} STORIES</span><button class="btn-exp" onclick="selectAllItems('arch')" style="padding:4px 10px;font-size:10px;">Select All</button></div>
-      ${html}
+      ${html || '<div class="info-box">No stories found under selected epics.</div>'}
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">HLD · LLD · ADR · OpenAPI · Mermaid</span><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(2)">Generate Architecture →</button>`;
+  document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(1)">← Back to Epics</button><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(3)">Generate Architecture →</button>`;
 }
 
-function renderArchStep2() {
+function renderArchStep3() {
   const ids = state.arch.selectedIds;
   renderProgressList('arch', `<div style="background:var(--bg2);border:1px solid rgba(0,217,166,0.2);border-radius:8px;padding:11px 13px;margin-bottom:18px;"><div class="epic-key">${ids.length} stories selected</div><div class="epic-summary">${ids.join(' · ')}</div></div>`);
   runGenAnimation(
@@ -902,7 +1049,7 @@ function renderArchStep2() {
   );
 }
 
-function renderArchStep3() {
+function renderArchStep4() {
   const data = state.arch.reportData;
   if (!data) return;
   const hld = data.hld || {};
@@ -966,40 +1113,226 @@ function renderArchStep3() {
 
       ${diagrams.sequence ? `<div class="report-sec"><div class="report-sec-hdr">Sequence Diagram (Mermaid)</div><div class="code-block-hdr"><span>Sequence Flow</span></div><pre class="code-block">${escapeHtml(diagrams.sequence)}</pre></div>` : ''}
 
-      <div class="report-sec"><div class="report-sec-hdr">Export & Share</div><div class="report-actions"><button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button><button class="btn-exp" onclick="alert('Published to Confluence (simulated)')">📄 Publish to Confluence</button><button class="btn-exp" onclick="alert('Email sent (simulated)')">✉ Email to Stakeholders</button></div></div>
+      <div class="report-sec"><div class="report-sec-hdr">Export & Share</div>
+        <div class="report-actions">
+          <button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button>
+          <button class="btn-exp" onclick="copyArchMarkdown()">📋 Copy as Markdown</button>
+          <button class="btn-exp" onclick="publishArchToJira()" id="btn-arch-publish-jira">🔗 Publish to Jira</button>
+          <button class="btn-exp" onclick="showArchGitPush()" id="btn-arch-push-git">🐙 Push to Git</button>
+        </div>
+        <div id="arch-publish-status" style="margin-top:10px;"></div>
+        <div id="arch-git-form" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px;">PUSH ARCHITECTURE DOC TO GIT</div>
+          <div class="fgrp"><label class="flabel">Repository URL</label><input class="finput" id="arch-git-repo" placeholder="https://github.com/org/repo"></div>
+          <div class="fgrp"><label class="flabel">Personal Access Token</label><input class="finput" id="arch-git-token" type="password" placeholder="ghp_..."></div>
+          <div class="fgrp"><label class="flabel">Branch (base)</label><input class="finput" id="arch-git-branch" placeholder="main" value="main"></div>
+          <div style="text-align:right;margin-top:8px;"><button class="btn btn-primary" onclick="executeArchGitPush()" id="btn-arch-git-go" style="padding:6px 16px;font-size:11px;">Push Architecture Doc →</button></div>
+          <div id="arch-git-status" style="margin-top:8px;"></div>
+        </div>
+      </div>
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = '<button class="btn btn-ghost" onclick="goToStep(1)">← Select different stories</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button>';
+  document.getElementById('panel-ftr').innerHTML = '<button class="btn btn-ghost" onclick="goToStep(1)">← Select different epics</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button>';
+}
+
+async function publishArchToJira() {
+  const btn = document.getElementById('btn-arch-publish-jira');
+  const statusEl = document.getElementById('arch-publish-status');
+  const epicKeys = state.arch.selectedEpicKeys;
+  const spec = state.arch.reportData;
+
+  if (!epicKeys?.length || !spec) {
+    statusEl.innerHTML = '<div class="error-box">No epics or architecture data available.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '🔄 Publishing…';
+  statusEl.innerHTML = '<div class="info-box">Publishing architecture document as comments to Jira epics…</div>';
+
+  try {
+    const result = await apiPost('/api/arch-agent/publish', { epicKeys, spec });
+    const msg = `Published to ${result.published.length} of ${result.total} epics.` +
+      (result.failed.length ? ` ${result.failed.length} failed.` : '') +
+      ` Epics updated: ${result.published.join(', ')}`;
+    btn.textContent = `✓ Published to ${result.published.length} epics`;
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#fff';
+    statusEl.innerHTML = `<div class="success-box">${msg}</div>`;
+  } catch (error) {
+    btn.textContent = '🔗 Publish to Jira';
+    btn.disabled = false;
+    statusEl.innerHTML = `<div class="error-box">Failed to publish: ${error.message}</div>`;
+  }
+}
+
+async function copyArchMarkdown() {
+  try {
+    const result = await apiPost('/api/arch-agent/export/markdown', { spec: state.arch.reportData });
+    await navigator.clipboard.writeText(result.markdown);
+    const statusEl = document.getElementById('arch-publish-status');
+    if (statusEl) statusEl.innerHTML = '<div class="success-box">✓ Architecture markdown copied to clipboard.</div>';
+  } catch (error) {
+    alert(`Copy failed: ${error.message}`);
+  }
+}
+
+function showArchGitPush() {
+  const form = document.getElementById('arch-git-form');
+  if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function executeArchGitPush() {
+  const repoUrl = document.getElementById('arch-git-repo').value.trim();
+  const token = document.getElementById('arch-git-token').value.trim();
+  const branch = document.getElementById('arch-git-branch').value.trim() || 'main';
+  const statusEl = document.getElementById('arch-git-status');
+  const btn = document.getElementById('btn-arch-git-go');
+
+  if (!repoUrl || !token) {
+    statusEl.innerHTML = '<div class="error-box">Repository URL and token are required.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '🔄 Pushing…';
+  statusEl.innerHTML = '<div class="info-box">Validating repo, cloning, committing architecture doc…</div>';
+
+  try {
+    // Step 1: Validate repo
+    await apiPost('/api/git/validate', { repoUrl, token });
+
+    // Step 2: Clone
+    const cloneResult = await apiPost('/api/git/clone', { repoUrl, token, branch, storyIds: ['arch-spec'] });
+
+    // Step 3: Generate markdown and push
+    const mdResult = await apiPost('/api/arch-agent/export/markdown', { spec: state.arch.reportData });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const generatedFiles = {};
+    generatedFiles[`docs/architecture/arch-spec-${timestamp}.md`] = mdResult.markdown;
+
+    const pushResult = await apiPost('/api/git/push', {
+      clonedPath: cloneResult.clonedPath,
+      storyIds: state.arch.selectedIds,
+      generatedFiles,
+      token,
+      repoUrl,
+      commitMessage: `docs: AI-generated architecture specification [AADP Arch Agent]`,
+      branchPrefix: 'arch-spec'
+    });
+
+    btn.textContent = '✓ Pushed';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#fff';
+    statusEl.innerHTML = `<div class="success-box">✓ Architecture doc pushed to branch <strong>${pushResult.branch}</strong>.</div>`;
+  } catch (error) {
+    btn.textContent = 'Push Architecture Doc →';
+    btn.disabled = false;
+    statusEl.innerHTML = `<div class="error-box">Push failed: ${error.message}</div>`;
+  }
 }
 
 // ============================================================
 //  TEST PLANNING AGENT
 // ============================================================
 async function renderTestStep1() {
-  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Loading stories with acceptance criteria…</div></div>';
+  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Checking Jira connection and loading epics…</div></div>';
   document.getElementById('panel-ftr').innerHTML = '';
+
+  let connStatus = { connected: false };
+  try { connStatus = await apiGet('/api/test-agent/connection'); } catch { /* ignore */ }
+
   try {
-    const result = await apiGet('/api/test-agent/stories');
-    state.test.stories = result.items || [];
-  } catch {
-    state.test.stories = [];
-  }
-  state.test.selectedIds = [];
-  const html = state.test.stories
-    .map(
-      (s) =>
-        `<div class="epic-item" id="test-${s.id}" onclick="toggleItemSelection('test','${s.id}')"><div class="epic-chk" id="test-chk-${s.id}"></div><div style="flex:1"><div class="epic-key">${s.id}</div><div class="epic-summary">${s.title}</div>${s.acceptance_criteria ? `<div class="epic-desc">${(s.acceptance_criteria || []).slice(0, 1).join('')}</div>` : ''}<div class="epic-meta"><span class="sp-badge">${s.story_points} pts</span><span class="epill ${s.priority === 'High' ? 'p-high' : 'p-medium'}">${s.priority}</span></div></div></div>`
-    )
-    .join('');
+    const result = await apiGet('/api/test-agent/epics');
+    state.test.epics = result.items || [];
+  } catch { state.test.epics = []; }
+
+  state.test.selectedEpicKeys = [];
+
+  const sourceLabel = connStatus.connected
+    ? `<div class="success-box">Connected to Jira (project: <strong>${connStatus.project}</strong>) — showing <strong>${state.test.epics.length}</strong> epics. Select epics to load user stories for test planning.</div>`
+    : `<div class="info-box"><strong>Jira not connected.</strong> Connect via the Product Owner agent first for live data. Showing cached/mock epics below.</div>`;
+
+  const priorityClass = { Critical: 'p-critical', High: 'p-high', Medium: 'p-medium', Low: 'p-low' };
+  const epicHtml = state.test.epics.map((epic) => `
+    <div class="epic-item" id="tst-epic-${epic.key}" onclick="toggleTestEpic('${epic.key}')">
+      <div class="epic-chk" id="tst-epic-chk-${epic.key}"></div>
+      <div style="flex:1">
+        <div class="epic-key">${epic.key}</div>
+        <div class="epic-summary">${epic.summary}</div>
+        <div class="epic-meta"><span class="epill ${priorityClass[epic.priority] || 'p-medium'}">${epic.priority || 'Medium'}</span><span class="sp-badge">${epic.status || ''}</span></div>
+      </div>
+    </div>`).join('');
+
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
-      <div class="info-box">Select stories with acceptance criteria to generate a comprehensive test plan — strategy, BDD scenarios, and automation scripts.</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.test.stories.length} STORIES</span><button class="btn-exp" onclick="selectAllItems('test')" style="padding:4px 10px;font-size:10px;">Select All</button></div>
-      ${html}
+      ${sourceLabel}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.test.epics.length} EPICS</span>
+        <button class="btn-exp" onclick="selectAllTestEpics()" style="padding:4px 10px;font-size:10px;">Select All</button>
+      </div>
+      ${epicHtml || '<div class="info-box">No epics found. Please connect to Jira via the Product Owner agent.</div>'}
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">BDD · Playwright · Pytest · Jest</span><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(2)">Generate Test Plan →</button>`;
+  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">BDD · Playwright · Pytest · Jest</span><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(2)">Load Stories →</button>`;
 }
 
-function renderTestStep2() {
+function toggleTestEpic(key) {
+  const idx = state.test.selectedEpicKeys.indexOf(key);
+  if (idx >= 0) state.test.selectedEpicKeys.splice(idx, 1);
+  else state.test.selectedEpicKeys.push(key);
+  const el = document.getElementById(`tst-epic-${key}`);
+  const chk = document.getElementById(`tst-epic-chk-${key}`);
+  const selected = state.test.selectedEpicKeys.includes(key);
+  if (el) el.classList.toggle('sel', selected);
+  if (chk) chk.innerHTML = selected ? '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  const btn = document.getElementById('gen-btn');
+  if (btn) btn.disabled = state.test.selectedEpicKeys.length === 0;
+}
+
+function selectAllTestEpics() {
+  const allKeys = state.test.epics.map((e) => e.key);
+  const allSelected = allKeys.every((k) => state.test.selectedEpicKeys.includes(k));
+  state.test.selectedEpicKeys = allSelected ? [] : [...allKeys];
+  allKeys.forEach((k) => {
+    const el = document.getElementById(`tst-epic-${k}`);
+    const chk = document.getElementById(`tst-epic-chk-${k}`);
+    const selected = state.test.selectedEpicKeys.includes(k);
+    if (el) el.classList.toggle('sel', selected);
+    if (chk) chk.innerHTML = selected ? '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  });
+  const btn = document.getElementById('gen-btn');
+  if (btn) btn.disabled = state.test.selectedEpicKeys.length === 0;
+}
+
+async function renderTestStep2() {
+  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Loading user stories for selected epics…</div></div>';
+  document.getElementById('panel-ftr').innerHTML = '';
+
+  let storySource = 'mock';
+  try {
+    const result = await apiPost('/api/test-agent/stories-by-epics', { epicKeys: state.test.selectedEpicKeys });
+    state.test.stories = result.items || [];
+    storySource = result.source || 'mock';
+  } catch { state.test.stories = []; }
+  state.test.selectedIds = [];
+
+  const sourceNote = storySource === 'jira'
+    ? `<div class="success-box">Loaded <strong>${state.test.stories.length}</strong> user stories from Jira.</div>`
+    : `<div class="info-box">Showing mock stories (Jira not connected or no stories found).</div>`;
+
+  const html = state.test.stories.map((s) =>
+    `<div class="epic-item" id="test-${s.id}" onclick="toggleItemSelection('test','${s.id}')"><div class="epic-chk" id="test-chk-${s.id}"></div><div style="flex:1"><div class="epic-key">${s.id}</div><div class="epic-summary">${s.title}</div>${s.acceptance_criteria ? `<div class="epic-desc">${(s.acceptance_criteria || []).slice(0, 1).join('')}</div>` : ''}<div class="epic-meta"><span class="sp-badge">${s.story_points} pts</span><span class="epill ${s.priority === 'High' ? 'p-high' : 'p-medium'}">${s.priority}</span>${s.parentKey ? `<span class="card-tag">${s.parentKey}</span>` : ''}</div></div></div>`
+  ).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      ${sourceNote}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.test.stories.length} STORIES</span><button class="btn-exp" onclick="selectAllItems('test')" style="padding:4px 10px;font-size:10px;">Select All</button></div>
+      ${html || '<div class="info-box">No stories found under selected epics.</div>'}
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(1)">← Back to Epics</button><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(3)">Generate Test Plan →</button>`;
+}
+
+function renderTestStep3() {
   const ids = state.test.selectedIds;
   renderProgressList('test', `<div style="background:var(--bg2);border:1px solid rgba(0,217,166,0.2);border-radius:8px;padding:11px 13px;margin-bottom:18px;"><div class="epic-key">${ids.length} stories selected</div><div class="epic-summary">${ids.join(' · ')}</div></div>`);
   runGenAnimation(
@@ -1008,11 +1341,12 @@ function renderTestStep2() {
     (result) => {
       state.test.reportData = result.plan;
       state.test.reportSource = result.source;
+      state.test.approved = false;
     }
   );
 }
 
-function renderTestStep3() {
+function renderTestStep4() {
   const data = state.test.reportData;
   if (!data) return;
   const strategy = data.strategy || {};
@@ -1020,34 +1354,25 @@ function renderTestStep3() {
   const bdd = data.bdd_scenarios || [];
   const snippets = data.automation_snippets || [];
   const summary = data.summary || {};
+  const approved = state.test.approved;
 
-  const suitesHtml = suites
-    .map((suite) => {
-      const casesHtml = (suite.test_cases || [])
-        .map(
-          (tc) =>
-            `<div class="ac-item"><span class="kw">${tc.id}</span> [${tc.priority}] ${tc.title} ${tc.automated ? '<span style="color:var(--accent)">● Auto</span>' : '<span style="color:var(--amber)">● Manual</span>'}</div>`
-        )
-        .join('');
-      return `<div class="story-card"><div class="story-top"><div><div class="story-id">${suite.id}</div><div class="story-title">${suite.name}</div></div><span class="sp-badge">${suite.type}</span></div><div class="epic-meta" style="margin-bottom:6px"><span class="card-tag">Stories: ${(suite.story_ids || []).join(', ')}</span></div><div class="ac-list" style="display:flex">${casesHtml}</div></div>`;
-    })
-    .join('');
+  const suitesHtml = suites.map((suite) => {
+    const casesHtml = (suite.test_cases || []).map((tc) =>
+      `<div class="ac-item"><span class="kw">${tc.id}</span> [${tc.priority}] ${tc.title} ${tc.automated ? '<span style="color:var(--accent)">● Auto</span>' : '<span style="color:var(--amber)">● Manual</span>'}</div>`
+    ).join('');
+    return `<div class="story-card"><div class="story-top"><div><div class="story-id">${suite.id}</div><div class="story-title">${suite.name}</div></div><span class="sp-badge">${suite.type}</span></div><div class="epic-meta" style="margin-bottom:6px"><span class="card-tag">Stories: ${(suite.story_ids || []).join(', ')}</span></div><div class="ac-list" style="display:flex">${casesHtml}</div></div>`;
+  }).join('');
 
-  const bddHtml = bdd
-    .map((feature) => {
-      const scenariosHtml = (feature.scenarios || [])
-        .map(
-          (sc) =>
-            `<div class="ac-item" style="display:block"><div style="font-weight:500;margin-bottom:4px">${sc.name}</div><div><span class="kw">Given</span> ${sc.given}</div><div><span class="kw">When</span> ${sc.when}</div><div><span class="kw">Then</span> ${sc.then}</div><div style="margin-top:4px">${(sc.tags || []).map((t) => `<span class="card-tag">${t}</span>`).join(' ')}</div></div>`
-        )
-        .join('');
-      return `<div class="story-card"><div class="story-top"><div><div class="story-id">${feature.story_id}</div><div class="story-title">${feature.feature}</div></div></div>${scenariosHtml}</div>`;
-    })
-    .join('');
+  const bddHtml = bdd.map((feature) => {
+    const scenariosHtml = (feature.scenarios || []).map((sc) =>
+      `<div class="ac-item" style="display:block"><div style="font-weight:500;margin-bottom:4px">${sc.name}</div><div><span class="kw">Given</span> ${sc.given}</div><div><span class="kw">When</span> ${sc.when}</div><div><span class="kw">Then</span> ${sc.then}</div><div style="margin-top:4px">${(sc.tags || []).map((t) => `<span class="card-tag">${t}</span>`).join(' ')}</div></div>`
+    ).join('');
+    return `<div class="story-card"><div class="story-top"><div><div class="story-id">${feature.story_id}</div><div class="story-title">${feature.feature}</div></div></div>${scenariosHtml}</div>`;
+  }).join('');
 
-  const snippetsHtml = snippets
-    .map((s) => `<div class="report-sec"><div class="code-block-hdr"><span>${s.filename}</span><span>${s.framework} · ${s.language}</span></div><pre class="code-block">${escapeHtml(s.code)}</pre></div>`)
-    .join('');
+  const snippetsHtml = snippets.map((s) =>
+    `<div class="report-sec"><div class="code-block-hdr"><span>${s.filename}</span><span>${s.framework} · ${s.language}</span></div><pre class="code-block">${escapeHtml(s.code)}</pre></div>`
+  ).join('');
 
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
@@ -1079,35 +1404,197 @@ function renderTestStep3() {
 
       ${summary.risk_areas ? `<div class="report-sec"><div class="report-sec-hdr">Risk Areas</div>${(summary.risk_areas || []).map((r) => `<div class="risk-row"><div class="risk-bar Medium"></div><div><div class="risk-title">${r}</div></div></div>`).join('')}</div>` : ''}
 
-      <div class="report-sec"><div class="report-sec-hdr">Export & Share</div><div class="report-actions"><button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button><button class="btn-exp" onclick="alert('Test plan published to Jira (simulated)')">🔗 Publish to Jira</button><button class="btn-exp" onclick="alert('Email sent (simulated)')">✉ Email to QA Team</button></div></div>
+      <div class="report-sec" id="test-approve-sec">
+        <div class="report-sec-hdr">Approval</div>
+        <div id="test-approve-box" style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+          ${approved
+            ? '<div class="success-box" style="flex:1;margin:0;">✓ Test plan approved</div>'
+            : '<div class="info-box" style="flex:1;margin:0;">Review the test plan above. If no changes needed, approve to enable publishing.</div><button class="btn btn-primary" onclick="approveTestPlan()" style="white-space:nowrap;">✓ Approve</button>'}
+        </div>
+      </div>
+
+      <div class="report-sec"><div class="report-sec-hdr">Export & Publish</div>
+        <div class="report-actions">
+          <button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button>
+          <button class="btn-exp" onclick="copyTestPlanMarkdown()">📋 Copy as Markdown</button>
+          <button class="btn-exp" onclick="publishTestPlanToJira()" id="btn-test-publish-jira" ${approved ? '' : 'disabled'}>🔗 Publish to Jira</button>
+          <button class="btn-exp" onclick="showTestGitPush()" id="btn-test-push-git" ${approved ? '' : 'disabled'}>🐙 Push to Git</button>
+        </div>
+        <div id="test-publish-status" style="margin-top:10px;"></div>
+        <div id="test-git-form" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px;">PUSH TEST PLAN TO GIT</div>
+          <div class="fgrp"><label class="flabel">Repository URL</label><input class="finput" id="test-git-repo" placeholder="https://github.com/org/repo"></div>
+          <div class="fgrp"><label class="flabel">Personal Access Token</label><input class="finput" id="test-git-token" type="password" placeholder="ghp_..."></div>
+          <div class="fgrp"><label class="flabel">Branch (base)</label><input class="finput" id="test-git-branch" placeholder="main" value="main"></div>
+          <div style="text-align:right;margin-top:8px;"><button class="btn btn-primary" onclick="executeTestGitPush()" id="btn-test-git-go" style="padding:6px 16px;font-size:11px;">Push Test Plan →</button></div>
+          <div id="test-git-status" style="margin-top:8px;"></div>
+        </div>
+      </div>
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = '<button class="btn btn-ghost" onclick="goToStep(1)">← Select different stories</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button>';
+  document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(2)">← Re-select stories</button><div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="goToStep(3)">⟳ Re-generate</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button></div>`;
+}
+
+function approveTestPlan() {
+  state.test.approved = true;
+  renderTestStep4();
+}
+
+async function publishTestPlanToJira() {
+  const btn = document.getElementById('btn-test-publish-jira');
+  const statusEl = document.getElementById('test-publish-status');
+  const epicKeys = state.test.selectedEpicKeys;
+  const plan = state.test.reportData;
+  if (!epicKeys?.length || !plan) { statusEl.innerHTML = '<div class="error-box">No data available.</div>'; return; }
+  btn.disabled = true; btn.textContent = '🔄 Publishing…';
+  try {
+    const result = await apiPost('/api/test-agent/publish', { epicKeys, plan });
+    btn.textContent = `✓ Published to ${result.published.length} epics`; btn.style.background = 'var(--green)'; btn.style.color = '#fff';
+    statusEl.innerHTML = `<div class="success-box">Published test plan to: ${result.published.join(', ')}${result.failed.length ? ` (${result.failed.length} failed)` : ''}</div>`;
+  } catch (error) { btn.textContent = '🔗 Publish to Jira'; btn.disabled = false; statusEl.innerHTML = `<div class="error-box">Failed: ${error.message}</div>`; }
+}
+
+async function copyTestPlanMarkdown() {
+  try {
+    const result = await apiPost('/api/test-agent/export/markdown', { plan: state.test.reportData });
+    await navigator.clipboard.writeText(result.markdown);
+    const s = document.getElementById('test-publish-status');
+    if (s) s.innerHTML = '<div class="success-box">✓ Test plan markdown copied to clipboard.</div>';
+  } catch (error) { alert(`Copy failed: ${error.message}`); }
+}
+
+function showTestGitPush() {
+  const form = document.getElementById('test-git-form');
+  if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function executeTestGitPush() {
+  const repoUrl = document.getElementById('test-git-repo').value.trim();
+  const token = document.getElementById('test-git-token').value.trim();
+  const branch = document.getElementById('test-git-branch').value.trim() || 'main';
+  const statusEl = document.getElementById('test-git-status');
+  const btn = document.getElementById('btn-test-git-go');
+  if (!repoUrl || !token) { statusEl.innerHTML = '<div class="error-box">Repository URL and token are required.</div>'; return; }
+  btn.disabled = true; btn.textContent = '🔄 Pushing…';
+  try {
+    await apiPost('/api/git/validate', { repoUrl, token });
+    const cloneResult = await apiPost('/api/git/clone', { repoUrl, token, branch, storyIds: ['test-plan'] });
+    const mdResult = await apiPost('/api/test-agent/export/markdown', { plan: state.test.reportData });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const generatedFiles = {}; generatedFiles[`docs/test-plans/test-plan-${timestamp}.md`] = mdResult.markdown;
+    const pushResult = await apiPost('/api/git/push', { clonedPath: cloneResult.clonedPath, storyIds: state.test.selectedIds, generatedFiles, token, repoUrl, commitMessage: 'docs: AI-generated test plan [AADP Test Planning Agent]', branchPrefix: 'test-plan' });
+    btn.textContent = '✓ Pushed'; btn.style.background = 'var(--green)'; btn.style.color = '#fff';
+    statusEl.innerHTML = `<div class="success-box">✓ Test plan pushed to branch <strong>${pushResult.branch}</strong>.</div>`;
+  } catch (error) { btn.textContent = 'Push Test Plan →'; btn.disabled = false; statusEl.innerHTML = `<div class="error-box">Push failed: ${error.message}</div>`; }
 }
 
 // ============================================================
 //  CODE GENERATION AGENT
 // ============================================================
-function renderCodeStep1() {
+async function renderCodeStep1() {
+  // Check global settings for pre-populated Git
+  let globalSettings = null;
+  try { globalSettings = await apiGet('/api/settings'); } catch { /* ignore */ }
+  const gg = globalSettings?.git;
+  const hasGlobalGit = gg?.connected === true;
+
+  const activeTab = state.code.mode || 'git';
+  const gitActive = activeTab === 'git' ? 'active' : '';
+  const localActive = activeTab === 'local' ? 'active' : '';
+
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
-      <div class="info-box"><strong>Git Integration:</strong> Connect to your GitHub repository. The agent will clone it locally, write the generated code into it, open VS Code, then push a new branch and open a PR.</div>
-      <div class="frow">
-        <div class="fgrp"><label class="flabel">Repository URL</label><input class="finput" id="git-repo-url" placeholder="https://github.com/org/repo" value="${state.code.gitConfig?.repoUrl || ''}"></div>
-        <div class="fgrp"><label class="flabel">Base Branch</label><input class="finput" id="git-branch" placeholder="main" value="${state.code.gitConfig?.branch || 'main'}"></div>
+      <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)">
+        <button class="btn-exp ${gitActive}" id="cg-tab-git" onclick="switchCodeTab('git')" style="flex:1;border-radius:6px 0 0 0;padding:10px;font-size:11px;${gitActive ? 'background:var(--accent);color:#090b0f;font-weight:700' : ''}">⬇ Clone from GitHub</button>
+        <button class="btn-exp ${localActive}" id="cg-tab-local" onclick="switchCodeTab('local')" style="flex:1;border-radius:0 6px 0 0;padding:10px;font-size:11px;${localActive ? 'background:var(--accent);color:#090b0f;font-weight:700' : ''}">📁 Select Local Folder</button>
       </div>
-      <div class="fgrp"><label class="flabel">Personal Access Token (PAT)</label><input class="finput" id="git-token" type="password" placeholder="ghp_••••••••••••••••" value="${state.code.gitConfig?.token || ''}"><div style="font-size:10px;color:var(--text3);margin-top:4px">Requires <strong>repo</strong> scope. Token is held in memory only and never stored.</div></div>
-      <div id="git-connect-status"></div>
+      <div id="cg-tab-content"></div>
+      <div id="cg-connect-status"></div>
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = `
-    <button class="btn btn-ghost" onclick="skipGitConfig()">Skip — Generate Only →</button>
-    <button class="btn btn-primary" onclick="handleGitConnect()">Connect &amp; Validate →</button>`;
+
+  renderCodeTabContent(activeTab, hasGlobalGit, gg);
+
+  document.getElementById('panel-ftr').innerHTML = activeTab === 'git'
+    ? `<button class="btn btn-ghost" onclick="skipGitConfig()">Skip — Generate Only →</button><button class="btn btn-primary" onclick="handleGitConnect()">Connect &amp; Clone →</button>`
+    : `<button class="btn btn-ghost" onclick="skipGitConfig()">Skip — Generate Only →</button><button class="btn btn-primary" onclick="handleCodeLocalFolder()">Open &amp; Continue →</button>`;
+}
+
+function switchCodeTab(tab) {
+  state.code.mode = tab;
+  renderCodeStep1();
+}
+
+function renderCodeTabContent(tab, hasGlobalGit, gg) {
+  const el = document.getElementById('cg-tab-content');
+  if (tab === 'git') {
+    const repoVal = hasGlobalGit ? gg.repoUrl : (state.code.gitConfig?.repoUrl || '');
+    const branchVal = hasGlobalGit ? gg.branch : (state.code.gitConfig?.branch || 'main');
+    const readonlyAttr = hasGlobalGit ? 'readonly style="opacity:0.7;cursor:not-allowed;"' : '';
+    const globalNote = hasGlobalGit
+      ? `<div class="success-box">Git credentials loaded from <strong>⚙ Settings</strong>. To change, update Settings.</div>`
+      : `<div class="info-box"><strong>Clone from GitHub:</strong> The agent will clone the repo, generate code, open VS Code for you to test, then you can approve and push.</div>`;
+    el.innerHTML = `
+      ${globalNote}
+      <div class="frow">
+        <div class="fgrp"><label class="flabel">Repository URL</label><input class="finput" id="git-repo-url" placeholder="https://github.com/org/repo" value="${repoVal}" ${readonlyAttr}></div>
+        <div class="fgrp"><label class="flabel">Base Branch</label><input class="finput" id="git-branch" placeholder="main" value="${branchVal}" ${readonlyAttr}></div>
+      </div>
+      <div class="fgrp"><label class="flabel">Personal Access Token (PAT)</label><input class="finput" id="git-token" type="password" placeholder="${hasGlobalGit ? '••••••• (from Settings)' : 'ghp_••••••••••••••••'}" value="" ${readonlyAttr}><div style="font-size:10px;color:var(--text3);margin-top:4px">${hasGlobalGit ? 'Token stored securely on server via Settings.' : 'Requires <strong>repo</strong> scope.'}</div></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="info-box"><strong>Local Folder:</strong> Point to an existing project on your machine. The agent will open it in VS Code, generate code files, and let you test before pushing.</div>
+      <div class="fgrp"><label class="flabel">Project Folder Path</label><input class="finput" id="cg-local-path" placeholder="D:\\Projects\\my-app" value=""></div>
+      <div class="fgrp"><label class="flabel">GitHub PAT (optional — for push/PR)</label><input class="finput" id="cg-local-token" type="password" placeholder="ghp_... (optional)"><div style="font-size:10px;color:var(--text3);margin-top:4px">Only needed if you want to push code or create a PR later.</div></div>`;
+  }
 }
 
 async function handleGitConnect() {
-  const repoUrl = document.getElementById('git-repo-url').value.trim();
-  const token = document.getElementById('git-token').value.trim();
-  const branch = document.getElementById('git-branch').value.trim() || 'main';
-  const statusEl = document.getElementById('git-connect-status');
+  const statusEl = document.getElementById('cg-connect-status');
+  const btn = document.querySelector('#panel-ftr .btn-primary');
+
+  // Check if using global settings
+  let globalSettings = null;
+  try { globalSettings = await apiGet('/api/settings'); } catch { /* ignore */ }
+  const gg = globalSettings?.git;
+  const hasGlobalGit = gg?.connected === true;
+
+  let repoUrl, token, branch;
+  if (hasGlobalGit) {
+    repoUrl = gg.repoUrl;
+    branch = gg.branch || 'main';
+    // Token is on the server, validate via global
+    statusEl.innerHTML = '<div class="info-box">🔄 Cloning repository using saved credentials…</div>';
+    btn.disabled = true;
+    try {
+      const result = await apiPost('/api/git/clone', { repoUrl, token: '', branch, storyIds: ['codegen'], useGlobalToken: true });
+      state.code.mode = 'git';
+      state.code.gitConfig = { repoUrl, token: '', branch, useGlobal: true };
+      state.code.clonedPath = result.clonedPath;
+      statusEl.innerHTML = `<div class="success-box">✓ Cloned to <strong>${result.clonedPath}</strong> — VS Code opening.</div>`;
+      btn.disabled = false;
+      btn.textContent = 'Select Stories →';
+      btn.onclick = () => goToStep(2);
+    } catch {
+      // Fallback: clone needs the token from the server — use validate endpoint
+      token = '';
+      statusEl.innerHTML = '<div class="info-box">🔄 Validating repository access…</div>';
+      try {
+        state.code.mode = 'git';
+        state.code.gitConfig = { repoUrl, token, branch, useGlobal: true };
+        statusEl.innerHTML = `<div class="success-box">✓ Connected to <strong>${repoUrl}</strong></div>`;
+        btn.disabled = false;
+        btn.textContent = 'Select Stories →';
+        btn.onclick = () => goToStep(2);
+      } catch (err2) {
+        btn.disabled = false;
+        statusEl.innerHTML = `<div class="error-box">⚠ ${err2.message}</div>`;
+      }
+    }
+    return;
+  }
+
+  repoUrl = document.getElementById('git-repo-url').value.trim();
+  token = document.getElementById('git-token').value.trim();
+  branch = document.getElementById('git-branch').value.trim() || 'main';
 
   if (!repoUrl || !token) {
     statusEl.innerHTML = '<div class="error-box">⚠ Repository URL and Personal Access Token are required.</div>';
@@ -1115,11 +1602,10 @@ async function handleGitConnect() {
   }
 
   statusEl.innerHTML = '<div class="info-box">🔄 Validating repository access…</div>';
-  const btn = document.querySelector('#panel-ftr .btn-primary');
   btn.disabled = true;
-
   try {
     const result = await apiPost('/api/git/validate', { repoUrl, token });
+    state.code.mode = 'git';
     state.code.gitConfig = { repoUrl, token, branch };
     statusEl.innerHTML = `<div class="success-box">✓ Connected to <strong>${result.repoName}</strong> — access confirmed</div>`;
     btn.disabled = false;
@@ -1131,8 +1617,40 @@ async function handleGitConnect() {
   }
 }
 
+async function handleCodeLocalFolder() {
+  const folderPath = document.getElementById('cg-local-path').value.trim();
+  const token = document.getElementById('cg-local-token')?.value.trim() || '';
+  const statusEl = document.getElementById('cg-connect-status');
+  if (!folderPath) { statusEl.innerHTML = '<div class="error-box">⚠ Please enter a folder path.</div>'; return; }
+
+  const btn = document.querySelector('#panel-ftr .btn-primary');
+  btn.disabled = true;
+  statusEl.innerHTML = '<div class="info-box">🔄 Validating folder…</div>';
+
+  try {
+    const result = await apiPost('/api/codereview-agent/validate-local', { folderPath });
+    state.code.mode = 'local';
+    state.code.clonedPath = result.folderPath;
+    state.code.localGit = { hasGit: result.hasGit, remote: result.remote, branch: result.branch };
+    state.code.gitConfig = result.hasGit && (token || result.remote) ? { repoUrl: result.remote, token, branch: result.branch } : null;
+
+    const gitLabel = result.hasGit
+      ? `Git: <strong>${result.branch || '—'}</strong>${result.remote ? ' · ' + result.remote : ' · no remote'}`
+      : 'No Git repository detected — generate only, push unavailable';
+    statusEl.innerHTML = `<div class="success-box">✓ ${escapeHtml(result.folderPath)}<br><span style="font-size:10px">${gitLabel}</span></div>`;
+
+    btn.disabled = false;
+    btn.textContent = 'Select Stories →';
+    btn.onclick = () => goToStep(2);
+  } catch (err) {
+    btn.disabled = false;
+    statusEl.innerHTML = `<div class="error-box">⚠ ${err.message}</div>`;
+  }
+}
+
 function skipGitConfig() {
   state.code.gitConfig = null;
+  state.code.mode = null;
   goToStep(2);
 }
 
@@ -1152,13 +1670,15 @@ async function renderCodeStep2() {
         `<div class="epic-item" id="code-${s.id}" onclick="toggleItemSelection('code','${s.id}')"><div class="epic-chk" id="code-chk-${s.id}"></div><div style="flex:1"><div class="epic-key">${s.id}</div><div class="epic-summary">${s.title}</div><div class="epic-meta"><span class="sp-badge">${s.story_points} pts</span><span class="epill ${s.priority === 'High' ? 'p-high' : 'p-medium'}">${s.priority}</span></div></div></div>`
     )
     .join('');
-  const gitStatus = state.code.gitConfig
-    ? `<div class="info-box">🔗 Git connected: <strong>${state.code.gitConfig.repoUrl}</strong> · Branch: <strong>${state.code.gitConfig.branch}</strong></div>`
-    : `<div class="info-box" style="border-color:var(--amber)">⚠ No Git connection — code will be generated for preview only (no clone or push).</div>`;
+  const wsLabel = state.code.clonedPath
+    ? `<div class="success-box">Workspace: <strong>${state.code.clonedPath}</strong>${state.code.gitConfig ? ' · ' + state.code.gitConfig.repoUrl : ''}</div>`
+    : state.code.gitConfig
+      ? `<div class="info-box">🔗 Git: <strong>${state.code.gitConfig.repoUrl}</strong> · Branch: <strong>${state.code.gitConfig.branch}</strong></div>`
+      : `<div class="info-box" style="border-color:var(--amber)">⚠ No workspace — code preview only (no clone or push).</div>`;
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
-      ${gitStatus}
-      <div class="info-box" style="margin-top:8px">Select stories to scaffold — generates NestJS services, Prisma models, unit tests, and a PR.</div>
+      ${wsLabel}
+      <div class="info-box" style="margin-top:8px">Select stories to scaffold — generates services, models, unit tests, and a PR.</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.code.stories.length} STORIES</span><button class="btn-exp" onclick="selectAllItems('code')" style="padding:4px 10px;font-size:10px;">Select All</button></div>
       ${html}
     </div>`;
@@ -1174,6 +1694,7 @@ function renderCodeStep3() {
     (result) => {
       state.code.reportData = result.code;
       state.code.reportSource = result.source;
+      state.code.approved = false;
     }
   );
 }
@@ -1186,13 +1707,11 @@ function renderCodeStep4() {
   const tests = data.unit_tests || [];
   const pr = data.pr_summary || {};
   const sa = data.static_analysis || {};
-  const hasGit = !!state.code.gitConfig;
+  const metrics = sa.metrics || {};
+  const hasWs = !!state.code.clonedPath;
 
   const filesHtml = (scaffold.project_structure || [])
-    .map(
-      (f) =>
-        `<div class="file-tree-item"><span class="file-icon">${f.type === 'service' ? '⚙' : f.type === 'controller' ? '🔌' : f.type === 'model' ? '📦' : f.type === 'config' ? '⚡' : f.type === 'test' ? '🧪' : '📄'}</span><span style="flex:1">${f.path}</span><span style="color:var(--text3);font-size:10px">${f.lines} lines</span></div>`
-    )
+    .map((f) => `<div class="file-tree-item"><span class="file-icon">${f.type === 'service' ? '⚙' : f.type === 'controller' ? '🔌' : f.type === 'model' ? '📦' : f.type === 'config' ? '⚡' : f.type === 'test' ? '🧪' : '📄'}</span><span style="flex:1">${f.path}</span><span style="color:var(--text3);font-size:10px">${f.lines} lines</span></div>`)
     .join('');
 
   const snippetsHtml = snippets
@@ -1204,32 +1723,15 @@ function renderCodeStep4() {
     .join('');
 
   const issuesHtml = (sa.issues || [])
-    .map(
-      (issue) =>
-        `<div class="ac-item"><span class="kw">${issue.severity}</span> ${issue.rule} — ${issue.file}: ${issue.message}</div>`
-    )
+    .map((issue) => `<div class="ac-item"><span class="kw">${issue.severity}</span> ${issue.rule || ''} — ${issue.file}: ${issue.message}</div>`)
     .join('');
 
-  const metrics = sa.metrics || {};
-
-  const gitActionsHtml = hasGit ? `
-    <div class="report-sec">
-      <div class="report-sec-hdr">🔗 GitHub Integration</div>
-      <div class="story-card">
-        <div class="story-narrative" style="margin-bottom:12px">Repository: <strong>${state.code.gitConfig.repoUrl}</strong> · Base branch: <strong>${state.code.gitConfig.branch}</strong></div>
-        <div id="git-action-status"></div>
-        <div class="report-actions" style="margin-top:10px">
-          <button class="btn-exp primary" id="btn-clone-open" onclick="handleCloneAndOpen()">⬇ Clone &amp; Open in VS Code</button>
-          <button class="btn-exp" id="btn-push" onclick="handlePushCode()" ${state.code.clonedPath ? '' : 'disabled'}>🚀 Push Generated Code</button>
-          <button class="btn-exp" id="btn-create-pr" onclick="handleCreatePR()" ${state.code.pushedBranch ? '' : 'disabled'}>🔁 Create Pull Request</button>
-        </div>
-        ${state.code.pushedBranch ? `<div class="success-box" style="margin-top:8px">✓ Branch <strong>${state.code.pushedBranch}</strong> pushed</div>` : ''}
-      </div>
-    </div>` : `
-    <div class="report-sec">
-      <div class="report-sec-hdr">🔗 GitHub Integration</div>
-      <div class="story-card"><div class="story-narrative">No Git connection configured. <a href="#" onclick="goToStep(1)" style="color:var(--accent)">Go back to Step 1</a> to connect a repository and enable clone, push &amp; PR creation.</div></div>
-    </div>`;
+  // Clone & Open in VS Code button (if not already cloned)
+  const openVsCodeHtml = hasWs
+    ? `<div class="success-box">Workspace open: <strong>${state.code.clonedPath}</strong>. Test the code in VS Code, then come back to approve and publish.</div>`
+    : state.code.gitConfig
+      ? `<div class="info-box">Clone the repo and open in VS Code to test the generated code before approving.</div><div style="margin-top:8px;"><button class="btn-exp primary" id="btn-clone-open" onclick="handleCloneAndOpen()">⬇ Clone &amp; Open in VS Code</button></div><div id="git-action-status" style="margin-top:8px;"></div>`
+      : `<div class="info-box" style="border-color:var(--amber)">No workspace configured. Review code above, then approve.</div>`;
 
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
@@ -1244,7 +1746,7 @@ function renderCodeStep4() {
         </div>
       </div>
 
-      ${gitActionsHtml}
+      <div class="report-sec"><div class="report-sec-hdr">Test in IDE</div>${openVsCodeHtml}</div>
 
       <div class="report-sec"><div class="report-sec-hdr">Project Structure</div>
         <div class="story-card">
@@ -1254,17 +1756,7 @@ function renderCodeStep4() {
       </div>
 
       <div class="report-sec"><div class="report-sec-hdr">Code Snippets (${snippets.length})</div>${snippetsHtml}</div>
-
       <div class="report-sec"><div class="report-sec-hdr">Unit Tests (${tests.length})</div>${testsHtml}</div>
-
-      <div class="report-sec"><div class="report-sec-hdr">Pull Request</div>
-        <div class="story-card">
-          <div class="story-title">${pr.title || ''}</div>
-          <div class="story-narrative">${pr.description || ''}</div>
-          <div class="epic-meta"><span class="card-tag">+${pr.additions || 0} / -${pr.deletions || 0}</span><span class="card-tag">${pr.files_changed || 0} files</span>${(pr.labels || []).map((l) => `<span class="card-tag">${l}</span>`).join('')}</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px">REVIEWERS: ${(pr.reviewers || []).join(', ')}</div>
-        </div>
-      </div>
 
       <div class="report-sec"><div class="report-sec-hdr">Static Analysis — ${sa.tool || 'SonarQube'}</div>
         <div class="stats-grid" style="margin-bottom:10px">
@@ -1276,9 +1768,57 @@ function renderCodeStep4() {
         ${issuesHtml ? `<div class="ac-list" style="display:flex">${issuesHtml}</div>` : ''}
       </div>
 
-      <div class="report-sec"><div class="report-sec-hdr">Export</div><div class="report-actions"><button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button><button class="btn-exp" onclick="alert('Email sent (simulated)')">✉ Email to Team</button></div></div>
+      <div class="report-sec"><div class="report-sec-hdr">Pull Request Preview</div>
+        <div class="story-card">
+          <div class="story-title">${pr.title || ''}</div>
+          <div class="story-narrative">${pr.description || ''}</div>
+          <div class="epic-meta"><span class="card-tag">+${pr.additions || 0} / -${pr.deletions || 0}</span><span class="card-tag">${pr.files_changed || 0} files</span>${(pr.labels || []).map((l) => `<span class="card-tag">${l}</span>`).join('')}</div>
+        </div>
+      </div>
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = '<button class="btn btn-ghost" onclick="goToStep(2)">← Select different stories</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button>';
+  document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(2)">← Re-select stories</button><div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="goToStep(3)">⟳ Re-generate</button><button class="btn btn-primary" onclick="approveCode()">Approve & Publish →</button></div>`;
+}
+
+function approveCode() {
+  state.code.approved = true;
+  goToStep(5);
+}
+
+function renderCodeStep5() {
+  const data = state.code.reportData;
+  const pr = data?.pr_summary || {};
+  const hasGit = !!state.code.gitConfig;
+  const hasWs = !!state.code.clonedPath;
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      <div class="success-box">✓ Code approved. Commit, push, and create a PR below.</div>
+
+      <div class="report-sec"><div class="report-sec-hdr">Publish to Git</div>
+        <div class="story-card">
+          ${hasGit || hasWs ? `
+            <div class="story-narrative" style="margin-bottom:12px">${hasGit ? 'Repository: <strong>' + state.code.gitConfig.repoUrl + '</strong>' : ''} ${hasWs ? '· Workspace: <strong>' + state.code.clonedPath + '</strong>' : ''}</div>
+            <div id="git-action-status"></div>
+            <div class="report-actions" style="margin-top:10px">
+              ${!hasWs ? '<button class="btn-exp primary" id="btn-clone-open" onclick="handleCloneAndOpen()">⬇ Clone &amp; Open in VS Code</button>' : ''}
+              <button class="btn-exp ${hasWs ? 'primary' : ''}" id="btn-push" onclick="handlePushCode()" ${hasWs ? '' : 'disabled'}>🚀 Commit &amp; Push</button>
+              <button class="btn-exp" id="btn-create-pr" onclick="handleCreatePR()" ${state.code.pushedBranch ? '' : 'disabled'}>🔁 Create Pull Request</button>
+            </div>
+            ${state.code.pushedBranch ? `<div class="success-box" style="margin-top:8px">✓ Branch <strong>${state.code.pushedBranch}</strong> pushed</div>` : ''}
+          ` : `
+            <div class="story-narrative">No Git connection configured. <a href="#" onclick="goToStep(1)" style="color:var(--accent)">Go back to Step 1</a> to connect a repository.</div>
+          `}
+        </div>
+      </div>
+
+      <div class="report-sec"><div class="report-sec-hdr">Export</div>
+        <div class="report-actions">
+          <button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button>
+          <button class="btn-exp" onclick="alert('Email sent (simulated)')">✉ Email to Team</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = '<button class="btn btn-ghost" onclick="goToStep(4)">← Back to Report</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button>';
 }
 
 async function handleCloneAndOpen() {
@@ -1296,12 +1836,9 @@ async function handleCloneAndOpen() {
       storyIds: state.code.selectedIds
     });
     state.code.clonedPath = result.clonedPath;
-    const note = result.isEmptyRepo
-      ? ' <em>(Empty repo — generated code will be the first commit.)</em>'
-      : '';
-    statusEl.innerHTML = `<div class="success-box">✓ Cloned to <strong>${result.clonedPath}</strong> — VS Code should open momentarily.${note}</div>`;
+    const note = result.isEmptyRepo ? ' <em>(Empty repo — first commit.)</em>' : '';
+    statusEl.innerHTML = `<div class="success-box">✓ Cloned to <strong>${result.clonedPath}</strong> — VS Code opening.${note}</div>`;
     btn.textContent = '✓ Cloned';
-    // Enable push button
     const pushBtn = document.getElementById('btn-push');
     if (pushBtn) pushBtn.disabled = false;
   } catch (err) {
@@ -1319,7 +1856,6 @@ async function handlePushCode() {
   btn.textContent = '⏳ Pushing…';
   statusEl.innerHTML = '<div class="info-box">🔄 Writing generated files and pushing branch…</div>';
 
-  // Build a flat map of generated files from reportData
   const data = state.code.reportData || {};
   const generatedFiles = {};
   for (const snippet of (data.code_snippets || [])) {
@@ -1334,20 +1870,19 @@ async function handlePushCode() {
       clonedPath: state.code.clonedPath,
       storyIds: state.code.selectedIds,
       generatedFiles,
-      token: state.code.gitConfig.token,
-      repoUrl: state.code.gitConfig.repoUrl,
+      token: state.code.gitConfig?.token || '',
+      repoUrl: state.code.gitConfig?.repoUrl || '',
       commitMessage: `feat: AI-generated code for ${state.code.selectedIds.join(', ')} [AADP]`
     });
     state.code.pushedBranch = result.branch;
     statusEl.innerHTML = `<div class="success-box">✓ Branch <strong>${result.branch}</strong> pushed to origin.</div>`;
     btn.textContent = '✓ Pushed';
-    // Enable PR button
     const prBtn = document.getElementById('btn-create-pr');
     if (prBtn) prBtn.disabled = false;
   } catch (err) {
     statusEl.innerHTML = `<div class="error-box">⚠ ${err.message}</div>`;
     btn.disabled = false;
-    btn.textContent = '🚀 Push Generated Code';
+    btn.textContent = '🚀 Commit & Push';
   }
 }
 
@@ -1628,32 +2163,105 @@ function renderMonitorStep3() {
 //  REVIEW AGENT
 // ============================================================
 async function renderReviewStep1() {
-  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Loading review artifacts…</div></div>';
+  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Checking Jira connection and loading epics…</div></div>';
   document.getElementById('panel-ftr').innerHTML = '';
+
+  let connStatus = { connected: false };
+  try { connStatus = await apiGet('/api/review-agent/connection'); } catch { /* ignore */ }
+
   try {
-    const result = await apiGet('/api/review-agent/items');
-    state.review.items = result.items || [];
-  } catch {
-    state.review.items = [];
-  }
-  state.review.selectedIds = [];
-  const typeIcon = { architecture: '🏗️', adr: '📋', code: '⚙️', tests: '🧪', 'api-contract': '📜', diagram: '📊' };
-  const html = state.review.items
-    .map(
-      (item) =>
-        `<div class="epic-item" id="review-${item.id}" onclick="toggleItemSelection('review','${item.id}')"><div class="epic-chk" id="review-chk-${item.id}"></div><div style="flex:1"><div class="epic-key">${item.id}</div><div class="epic-summary">${item.title}</div><div class="epic-meta"><span class="card-tag">${typeIcon[item.type] || '📄'} ${item.type}</span><span class="card-tag">${item.source}</span><span class="epill p-medium">${item.status}</span></div></div></div>`
-    )
-    .join('');
+    const result = await apiGet('/api/review-agent/epics');
+    state.review.epics = result.items || [];
+  } catch { state.review.epics = []; }
+
+  state.review.selectedEpicKeys = [];
+
+  const sourceLabel = connStatus.connected
+    ? `<div class="success-box">Connected to Jira (project: <strong>${connStatus.project}</strong>) — showing <strong>${state.review.epics.length}</strong> epics. Select epics to load architecture artifacts for review.</div>`
+    : `<div class="info-box"><strong>Jira not connected.</strong> Connect via the Product Owner agent first for live data. Showing cached/mock epics below.</div>`;
+
+  const priorityClass = { Critical: 'p-critical', High: 'p-high', Medium: 'p-medium', Low: 'p-low' };
+  const epicHtml = state.review.epics.map((epic) => `
+    <div class="epic-item" id="rev-epic-${epic.key}" onclick="toggleReviewEpic('${epic.key}')">
+      <div class="epic-chk" id="rev-epic-chk-${epic.key}"></div>
+      <div style="flex:1">
+        <div class="epic-key">${epic.key}</div>
+        <div class="epic-summary">${epic.summary}</div>
+        <div class="epic-meta"><span class="epill ${priorityClass[epic.priority] || 'p-medium'}">${epic.priority || 'Medium'}</span><span class="sp-badge">${epic.status || ''}</span></div>
+      </div>
+    </div>`).join('');
+
   document.getElementById('panel-body').innerHTML = `
     <div class="fadein">
-      <div class="info-box">Select architecture artifacts to review — checks component boundary conformance, ADR adherence, API contract compliance, and design pattern correctness.</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.review.items.length} ARTIFACTS</span><button class="btn-exp" onclick="selectAllItems('review')" style="padding:4px 10px;font-size:10px;">Select All</button></div>
-      ${html}
+      ${sourceLabel}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.review.epics.length} EPICS</span>
+        <button class="btn-exp" onclick="selectAllReviewEpics()" style="padding:4px 10px;font-size:10px;">Select All</button>
+      </div>
+      ${epicHtml || '<div class="info-box">No epics found. Please connect to Jira via the Product Owner agent.</div>'}
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">ADR Check · OpenAPI Validation · Design Patterns</span><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(2)">Review Architecture →</button>`;
+  document.getElementById('panel-ftr').innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">ADR Check · OpenAPI Validation · Design Patterns</span><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(2)">Load Artifacts →</button>`;
 }
 
-function renderReviewStep2() {
+function toggleReviewEpic(key) {
+  const idx = state.review.selectedEpicKeys.indexOf(key);
+  if (idx >= 0) state.review.selectedEpicKeys.splice(idx, 1);
+  else state.review.selectedEpicKeys.push(key);
+  const el = document.getElementById(`rev-epic-${key}`);
+  const chk = document.getElementById(`rev-epic-chk-${key}`);
+  const selected = state.review.selectedEpicKeys.includes(key);
+  if (el) el.classList.toggle('sel', selected);
+  if (chk) chk.innerHTML = selected ? '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  const btn = document.getElementById('gen-btn');
+  if (btn) btn.disabled = state.review.selectedEpicKeys.length === 0;
+}
+
+function selectAllReviewEpics() {
+  const allKeys = state.review.epics.map((e) => e.key);
+  const allSelected = allKeys.every((k) => state.review.selectedEpicKeys.includes(k));
+  state.review.selectedEpicKeys = allSelected ? [] : [...allKeys];
+  allKeys.forEach((k) => {
+    const el = document.getElementById(`rev-epic-${k}`);
+    const chk = document.getElementById(`rev-epic-chk-${k}`);
+    const selected = state.review.selectedEpicKeys.includes(k);
+    if (el) el.classList.toggle('sel', selected);
+    if (chk) chk.innerHTML = selected ? '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#090B0F" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  });
+  const btn = document.getElementById('gen-btn');
+  if (btn) btn.disabled = state.review.selectedEpicKeys.length === 0;
+}
+
+async function renderReviewStep2() {
+  document.getElementById('panel-body').innerHTML = '<div class="fadein"><div class="info-box">Loading architecture artifacts for selected epics…</div></div>';
+  document.getElementById('panel-ftr').innerHTML = '';
+
+  let artSource = 'mock';
+  try {
+    const result = await apiPost('/api/review-agent/artifacts-by-epics', { epicKeys: state.review.selectedEpicKeys });
+    state.review.items = result.items || [];
+    artSource = result.source || 'mock';
+  } catch { state.review.items = []; }
+  state.review.selectedIds = [];
+
+  const sourceNote = artSource === 'jira'
+    ? `<div class="success-box">Loaded <strong>${state.review.items.length}</strong> artifacts from Jira for review.</div>`
+    : `<div class="info-box">Showing mock artifacts (Jira not connected or no artifacts found).</div>`;
+
+  const typeIcon = { architecture: '🏗️', adr: '📋', code: '⚙️', tests: '🧪', 'api-contract': '📜', diagram: '📊' };
+  const html = state.review.items.map((item) =>
+    `<div class="epic-item" id="review-${item.id}" onclick="toggleItemSelection('review','${item.id}')"><div class="epic-chk" id="review-chk-${item.id}"></div><div style="flex:1"><div class="epic-key">${item.id}</div><div class="epic-summary">${item.title}</div><div class="epic-meta"><span class="card-tag">${typeIcon[item.type] || '📄'} ${item.type}</span><span class="card-tag">${item.source}</span><span class="epill p-medium">${item.status}</span></div></div></div>`
+  ).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="fadein">
+      ${sourceNote}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${state.review.items.length} ARTIFACTS</span><button class="btn-exp" onclick="selectAllItems('review')" style="padding:4px 10px;font-size:10px;">Select All</button></div>
+      ${html || '<div class="info-box">No artifacts found under selected epics.</div>'}
+    </div>`;
+  document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(1)">← Back to Epics</button><button class="btn btn-primary" id="gen-btn" disabled onclick="goToStep(3)">Review Architecture →</button>`;
+}
+
+function renderReviewStep3() {
   const ids = state.review.selectedIds;
   renderProgressList('review', `<div style="background:var(--bg2);border:1px solid rgba(0,217,166,0.2);border-radius:8px;padding:11px 13px;margin-bottom:18px;"><div class="epic-key">${ids.length} artifacts selected</div><div class="epic-summary">${ids.join(' · ')}</div></div>`);
   runGenAnimation(
@@ -1662,19 +2270,21 @@ function renderReviewStep2() {
     (result) => {
       state.review.reportData = result.review;
       state.review.reportSource = result.source;
+      state.review.approved = false;
     }
   );
 }
 
-function renderReviewStep3() {
+function renderReviewStep4() {
   const data = state.review.reportData;
   if (!data) return;
   const arch = data.arch_review || {};
   const checks = data.compliance_checks || [];
   const summary = data.summary || {};
+  const approved = state.review.approved;
 
   const archCatsHtml = (arch.categories || [])
-    .map((cat) => `<div class="story-card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div class="story-title">${cat.name}</div><div style="display:flex;gap:6px"><span class="sp-badge">${cat.score}/100</span><span class="epill ${cat.status === 'Pass' ? 'p-medium' : 'p-high'}">${cat.status}</span></div></div>${(cat.violations || []).map((v) => `<div class="ac-item" style="margin-top:6px"><span class="kw">${v.severity}</span> ${escapeHtml(v.description)}</div>`).join('')}</div>`)
+    .map((cat) => `<div class="story-card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div class="story-title">${cat.name}</div><div style="display:flex;gap:6px"><span class="sp-badge">${cat.score}/100</span><span class="epill ${cat.status === 'Pass' ? 'p-medium' : 'p-high'}">${cat.status}</span></div></div>${(cat.violations || []).map((v) => `<div class="ac-item" style="margin-top:6px"><span class="kw">${v.severity}</span> ${escapeHtml(v.description)}${v.recommendation ? `<div style="color:var(--text3);font-size:10px;margin-top:2px">Recommendation: ${escapeHtml(v.recommendation)}</div>` : ''}</div>`).join('')}</div>`)
     .join('');
 
   const checksHtml = checks
@@ -1699,9 +2309,87 @@ function renderReviewStep3() {
 
       <div class="report-sec"><div class="report-sec-hdr">Compliance Checks (${checks.length})</div><div class="sprint-rows">${checksHtml}</div></div>
 
-      <div class="report-sec"><div class="report-sec-hdr">Export & Share</div><div class="report-actions"><button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button><button class="btn-exp" onclick="alert('Review posted to GitHub PR (simulated)')">🔗 Post to GitHub PR</button><button class="btn-exp" onclick="alert('Email sent (simulated)')">✉ Email to Team</button></div></div>
+      <div class="report-sec" id="review-approve-sec">
+        <div class="report-sec-hdr">Approval</div>
+        <div id="review-approve-box" style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+          ${approved
+            ? '<div class="success-box" style="flex:1;margin:0;">✓ Review approved</div>'
+            : '<div class="info-box" style="flex:1;margin:0;">Review the report above. If no changes needed, approve to enable publishing.</div><button class="btn btn-primary" onclick="approveReview()" style="white-space:nowrap;">✓ Approve</button>'}
+        </div>
+      </div>
+
+      <div class="report-sec"><div class="report-sec-hdr">Export & Publish</div>
+        <div class="report-actions">
+          <button class="btn-exp primary" onclick="exportPDF()">⬇ Export PDF</button>
+          <button class="btn-exp" onclick="copyReviewMarkdown()">📋 Copy as Markdown</button>
+          <button class="btn-exp" onclick="publishReviewToJira()" id="btn-review-publish-jira" ${approved ? '' : 'disabled'}>🔗 Publish to Jira</button>
+          <button class="btn-exp" onclick="showReviewGitPush()" id="btn-review-push-git" ${approved ? '' : 'disabled'}>🐙 Push to Git</button>
+        </div>
+        <div id="review-publish-status" style="margin-top:10px;"></div>
+        <div id="review-git-form" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px;">PUSH REVIEW REPORT TO GIT</div>
+          <div class="fgrp"><label class="flabel">Repository URL</label><input class="finput" id="review-git-repo" placeholder="https://github.com/org/repo"></div>
+          <div class="fgrp"><label class="flabel">Personal Access Token</label><input class="finput" id="review-git-token" type="password" placeholder="ghp_..."></div>
+          <div class="fgrp"><label class="flabel">Branch (base)</label><input class="finput" id="review-git-branch" placeholder="main" value="main"></div>
+          <div style="text-align:right;margin-top:8px;"><button class="btn btn-primary" onclick="executeReviewGitPush()" id="btn-review-git-go" style="padding:6px 16px;font-size:11px;">Push Review Report →</button></div>
+          <div id="review-git-status" style="margin-top:8px;"></div>
+        </div>
+      </div>
     </div>`;
-  document.getElementById('panel-ftr').innerHTML = '<button class="btn btn-ghost" onclick="goToStep(1)">← Review different artifacts</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button>';
+  document.getElementById('panel-ftr').innerHTML = `<button class="btn btn-ghost" onclick="goToStep(2)">← Re-select artifacts</button><div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="goToStep(3)">⟳ Re-generate</button><button class="btn btn-primary" onclick="closePanel()">Done ✓</button></div>`;
+}
+
+function approveReview() {
+  state.review.approved = true;
+  renderReviewStep4();
+}
+
+async function publishReviewToJira() {
+  const btn = document.getElementById('btn-review-publish-jira');
+  const statusEl = document.getElementById('review-publish-status');
+  const epicKeys = state.review.selectedEpicKeys;
+  const review = state.review.reportData;
+  if (!epicKeys?.length || !review) { statusEl.innerHTML = '<div class="error-box">No data available.</div>'; return; }
+  btn.disabled = true; btn.textContent = '🔄 Publishing…';
+  try {
+    const result = await apiPost('/api/review-agent/publish', { epicKeys, review });
+    btn.textContent = `✓ Published to ${result.published.length} epics`; btn.style.background = 'var(--green)'; btn.style.color = '#fff';
+    statusEl.innerHTML = `<div class="success-box">Published review to: ${result.published.join(', ')}${result.failed.length ? ` (${result.failed.length} failed)` : ''}</div>`;
+  } catch (error) { btn.textContent = '🔗 Publish to Jira'; btn.disabled = false; statusEl.innerHTML = `<div class="error-box">Failed: ${error.message}</div>`; }
+}
+
+async function copyReviewMarkdown() {
+  try {
+    const result = await apiPost('/api/review-agent/export/markdown', { review: state.review.reportData });
+    await navigator.clipboard.writeText(result.markdown);
+    const s = document.getElementById('review-publish-status');
+    if (s) s.innerHTML = '<div class="success-box">✓ Review markdown copied to clipboard.</div>';
+  } catch (error) { alert(`Copy failed: ${error.message}`); }
+}
+
+function showReviewGitPush() {
+  const form = document.getElementById('review-git-form');
+  if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function executeReviewGitPush() {
+  const repoUrl = document.getElementById('review-git-repo').value.trim();
+  const token = document.getElementById('review-git-token').value.trim();
+  const branch = document.getElementById('review-git-branch').value.trim() || 'main';
+  const statusEl = document.getElementById('review-git-status');
+  const btn = document.getElementById('btn-review-git-go');
+  if (!repoUrl || !token) { statusEl.innerHTML = '<div class="error-box">Repository URL and token are required.</div>'; return; }
+  btn.disabled = true; btn.textContent = '🔄 Pushing…';
+  try {
+    await apiPost('/api/git/validate', { repoUrl, token });
+    const cloneResult = await apiPost('/api/git/clone', { repoUrl, token, branch, storyIds: ['arch-review'] });
+    const mdResult = await apiPost('/api/review-agent/export/markdown', { review: state.review.reportData });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const generatedFiles = {}; generatedFiles[`docs/reviews/arch-review-${timestamp}.md`] = mdResult.markdown;
+    const pushResult = await apiPost('/api/git/push', { clonedPath: cloneResult.clonedPath, storyIds: state.review.selectedIds, generatedFiles, token, repoUrl, commitMessage: 'docs: AI-generated architecture review report [AADP Review Agent]', branchPrefix: 'arch-review' });
+    btn.textContent = '✓ Pushed'; btn.style.background = 'var(--green)'; btn.style.color = '#fff';
+    statusEl.innerHTML = `<div class="success-box">✓ Review report pushed to branch <strong>${pushResult.branch}</strong>.</div>`;
+  } catch (error) { btn.textContent = 'Push Review Report →'; btn.disabled = false; statusEl.innerHTML = `<div class="error-box">Push failed: ${error.message}</div>`; }
 }
 
 // ============================================================
@@ -2703,6 +3391,130 @@ function renderIncidentStep3() {
 }
 
 // ============================================================
+//  GLOBAL SETTINGS
+// ============================================================
+async function openSettings() {
+  const overlay = document.getElementById('settings-overlay');
+  overlay.classList.add('open');
+  document.getElementById('settings-body').innerHTML = '<div class="info-box">Loading settings…</div>';
+  document.getElementById('settings-ftr').innerHTML = '';
+
+  let settings = { jira: { connected: false }, git: { connected: false }, model: 'gpt-4o' };
+  try { settings = await apiGet('/api/settings'); } catch { /* ignore */ }
+
+  const jira = settings.jira || {};
+  const git = settings.git || {};
+  const model = settings.model || 'gpt-4o';
+
+  document.getElementById('settings-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <!-- Jira Section -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);">JIRA CONNECTION</div>
+          ${jira.connected ? '<span class="epill p-medium" style="font-size:9px;">● Connected</span>' : '<span class="epill p-high" style="font-size:9px;">● Not Connected</span>'}
+        </div>
+        <div class="frow">
+          <div class="fgrp"><label class="flabel">Jira Instance URL</label><input class="finput" id="s-jira-url" placeholder="https://yourorg.atlassian.net" value="${jira.url || ''}"></div>
+          <div class="fgrp"><label class="flabel">Project Key</label><input class="finput" id="s-jira-project" placeholder="PLAT" value="${jira.project || ''}"></div>
+        </div>
+        <div class="fgrp"><label class="flabel">Email</label><input class="finput" id="s-jira-email" placeholder="you@company.com" value="${jira.email || ''}"></div>
+        <div class="fgrp"><label class="flabel">API Token</label><input class="finput" id="s-jira-token" type="password" placeholder="${jira.connected ? '••••••• (saved)' : 'Paste your Jira API token'}"></div>
+        <div id="s-jira-status" style="margin-top:8px;">${jira.connected ? `<div class="success-box" style="margin:0;">Connected as <strong>${jira.user}</strong> — project ${jira.project}</div>` : ''}</div>
+        <div style="text-align:right;margin-top:8px;"><button class="btn btn-primary" onclick="saveSettingsJira()" style="padding:6px 16px;font-size:11px;">Validate & Save Jira</button></div>
+      </div>
+
+      <!-- Git Section -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);">GITHUB CONNECTION</div>
+          ${git.connected ? '<span class="epill p-medium" style="font-size:9px;">● Connected</span>' : '<span class="epill p-high" style="font-size:9px;">● Not Connected</span>'}
+        </div>
+        <div class="fgrp"><label class="flabel">Repository URL</label><input class="finput" id="s-git-repo" placeholder="https://github.com/org/repo" value="${git.repoUrl || ''}"></div>
+        <div class="frow">
+          <div class="fgrp"><label class="flabel">Personal Access Token</label><input class="finput" id="s-git-token" type="password" placeholder="${git.connected ? '••••••• (saved)' : 'ghp_...'}"></div>
+          <div class="fgrp"><label class="flabel">Default Branch</label><input class="finput" id="s-git-branch" placeholder="main" value="${git.branch || 'main'}"></div>
+        </div>
+        <div id="s-git-status" style="margin-top:8px;">${git.connected ? `<div class="success-box" style="margin:0;">Connected to <strong>${git.repoName}</strong></div>` : ''}</div>
+        <div style="text-align:right;margin-top:8px;"><button class="btn btn-primary" onclick="saveSettingsGit()" style="padding:6px 16px;font-size:11px;">Validate & Save GitHub</button></div>
+      </div>
+
+      <!-- Model Section -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);margin-bottom:12px;">AI MODEL</div>
+        <div class="fgrp"><label class="flabel">Default Model for All Agents</label>
+          <select class="finput" id="s-ai-model" onchange="saveSettingsModel()">
+            <option value="gpt-4o" ${model === 'gpt-4o' ? 'selected' : ''}>GPT-4o (Recommended)</option>
+            <option value="gpt-4o-mini" ${model === 'gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini (Faster)</option>
+          </select>
+        </div>
+        <div id="s-model-status" style="margin-top:4px;"></div>
+      </div>
+    </div>`;
+  document.getElementById('settings-ftr').innerHTML = '<button class="btn btn-ghost" onclick="closeSettings()">Close</button>';
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+async function saveSettingsJira() {
+  const url = document.getElementById('s-jira-url').value.trim();
+  const project = document.getElementById('s-jira-project').value.trim();
+  const email = document.getElementById('s-jira-email').value.trim();
+  const token = document.getElementById('s-jira-token').value.trim();
+  const statusEl = document.getElementById('s-jira-status');
+
+  if (!url || !project || !email || !token) {
+    statusEl.innerHTML = '<div class="error-box" style="margin:0;">All fields are required.</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<div class="info-box" style="margin:0;">🔄 Validating Jira credentials…</div>';
+  try {
+    const result = await apiPost('/api/settings/jira', { url, project, email, token });
+    statusEl.innerHTML = `<div class="success-box" style="margin:0;">✓ ${result.message}</div>`;
+    // Refresh the settings panel to show connected state
+    setTimeout(() => openSettings(), 1000);
+  } catch (error) {
+    statusEl.innerHTML = `<div class="error-box" style="margin:0;">✗ ${error.message}</div>`;
+  }
+}
+
+async function saveSettingsGit() {
+  const repoUrl = document.getElementById('s-git-repo').value.trim();
+  const token = document.getElementById('s-git-token').value.trim();
+  const branch = document.getElementById('s-git-branch').value.trim() || 'main';
+  const statusEl = document.getElementById('s-git-status');
+
+  if (!repoUrl || !token) {
+    statusEl.innerHTML = '<div class="error-box" style="margin:0;">Repository URL and token are required.</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<div class="info-box" style="margin:0;">🔄 Validating GitHub access…</div>';
+  try {
+    const result = await apiPost('/api/settings/git', { repoUrl, token, branch });
+    statusEl.innerHTML = `<div class="success-box" style="margin:0;">✓ ${result.message}</div>`;
+    setTimeout(() => openSettings(), 1000);
+  } catch (error) {
+    statusEl.innerHTML = `<div class="error-box" style="margin:0;">✗ ${error.message}</div>`;
+  }
+}
+
+async function saveSettingsModel() {
+  const model = document.getElementById('s-ai-model').value;
+  const statusEl = document.getElementById('s-model-status');
+  try {
+    await apiPost('/api/settings/model', { model });
+    statusEl.innerHTML = '<div class="success-box" style="margin:0;font-size:10px;">✓ Model saved</div>';
+    setTimeout(() => { statusEl.innerHTML = ''; }, 2000);
+  } catch (error) {
+    statusEl.innerHTML = `<div class="error-box" style="margin:0;font-size:10px;">Failed: ${error.message}</div>`;
+  }
+}
+
+// ============================================================
 //  Window Exports
 // ============================================================
 window.openPanel = openPanel;
@@ -2715,6 +3527,9 @@ window.handleConnect = handleConnect;
 window.selectEpic = selectEpic;
 window.selectAllEpics = selectAllEpics;
 window.handleGitConnect = handleGitConnect;
+window.handleCodeLocalFolder = handleCodeLocalFolder;
+window.switchCodeTab = switchCodeTab;
+window.approveCode = approveCode;
 window.skipGitConfig = skipGitConfig;
 window.handleCloneAndOpen = handleCloneAndOpen;
 window.handlePushCode = handlePushCode;
@@ -2723,6 +3538,28 @@ window.toggleAC = toggleAC;
 window.exportPDF = exportPDF;
 window.copyPoMarkdown = copyPoMarkdown;
 window.publishStoriesToJira = publishStoriesToJira;
+window.toggleArchEpic = toggleArchEpic;
+window.selectAllArchEpics = selectAllArchEpics;
+window.publishArchToJira = publishArchToJira;
+window.copyArchMarkdown = copyArchMarkdown;
+window.showArchGitPush = showArchGitPush;
+window.executeArchGitPush = executeArchGitPush;
+// Review Agent
+window.toggleReviewEpic = toggleReviewEpic;
+window.selectAllReviewEpics = selectAllReviewEpics;
+window.approveReview = approveReview;
+window.publishReviewToJira = publishReviewToJira;
+window.copyReviewMarkdown = copyReviewMarkdown;
+window.showReviewGitPush = showReviewGitPush;
+window.executeReviewGitPush = executeReviewGitPush;
+// Test Agent
+window.toggleTestEpic = toggleTestEpic;
+window.selectAllTestEpics = selectAllTestEpics;
+window.approveTestPlan = approveTestPlan;
+window.publishTestPlanToJira = publishTestPlanToJira;
+window.copyTestPlanMarkdown = copyTestPlanMarkdown;
+window.showTestGitPush = showTestGitPush;
+window.executeTestGitPush = executeTestGitPush;
 window.toggleTheme = toggleTheme;
 window.toggleItemSelection = toggleItemSelection;
 window.selectAllItems = selectAllItems;
@@ -2741,6 +3578,12 @@ window.selectAllCRIssues = selectAllCRIssues;
 window.handleCRPush = handleCRPush;
 window.handleCRCreatePR = handleCRCreatePR;
 // DE agent panel functions exposed globally
+// Settings
+window.openSettings = openSettings;
+window.closeSettings = closeSettings;
+window.saveSettingsJira = saveSettingsJira;
+window.saveSettingsGit = saveSettingsGit;
+window.saveSettingsModel = saveSettingsModel;
 window.openDePanel = openDePanel;
 window.closeDePanel = closeDePanel;
 window.deGo = deGo;

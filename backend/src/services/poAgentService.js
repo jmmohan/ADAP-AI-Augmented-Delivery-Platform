@@ -3,11 +3,24 @@ import { mockEpics } from '../data/mockEpics.js';
 import { buildMockReport } from '../data/mockReports.js';
 import { generateReport as generateReportFromLLM } from './llmService.js';
 import { validateConnection, fetchEpics, fetchIssue, publishStories } from './jiraService.js';
+import { getJiraConnection as getGlobalJira, isJiraConnected as isGlobalJiraConnected } from './connectionService.js';
 
 // In-memory store for Jira credentials from the last successful connection
 let jiraCreds = null;
 // Cache of epics from the last successful Jira fetch
 let jiraEpicsCache = null;
+
+/**
+ * Resolve effective Jira credentials — PO-local first, then global settings.
+ */
+function resolveJiraCreds() {
+  if (jiraCreds) return jiraCreds;
+  if (isGlobalJiraConnected()) {
+    const g = getGlobalJira();
+    return { url: g.url, project: g.project, email: g.email, token: g.token };
+  }
+  return null;
+}
 
 export function validateConnectionPayload(payload) {
   const { url, project, email, token } = payload || {};
@@ -97,9 +110,10 @@ export async function generateReport({ epicKey, model }) {
   let epic = getEpicByKey(epicKey);
 
   // If not in cache but we have jira creds, try fetching directly
-  if (!epic && jiraCreds) {
+  const creds = resolveJiraCreds();
+  if (!epic && creds) {
     try {
-      epic = await fetchIssue({ ...jiraCreds, issueKey: epicKey });
+      epic = await fetchIssue({ ...creds, issueKey: epicKey });
     } catch {
       // ignore — will throw below
     }
@@ -137,17 +151,34 @@ export async function generateReport({ epicKey, model }) {
  * Publish generated stories to Jira under the parent epic.
  */
 export async function publishToJira({ epicKey, stories }) {
-  if (!jiraCreds) {
-    throw new Error('Not connected to Jira. Please connect first.');
+  const creds = resolveJiraCreds();
+  if (!creds) {
+    throw new Error('Not connected to Jira. Please connect via Settings or the PO agent.');
   }
 
   return publishStories({
-    ...jiraCreds,
+    ...creds,
     parentEpicKey: epicKey,
     stories
   });
 }
 
+/**
+ * Connect using credentials already stored in global settings.
+ * Called when PO agent opens and global Jira is configured.
+ */
+export async function connectFromGlobalSettings() {
+  if (!isGlobalJiraConnected()) {
+    return { connected: false, message: 'No global Jira settings configured.' };
+  }
+  const g = getGlobalJira();
+  return connectToJira({ url: g.url, project: g.project, email: g.email, token: g.token });
+}
+
 export function isJiraConnected() {
-  return jiraCreds !== null;
+  return resolveJiraCreds() !== null;
+}
+
+export function getJiraCredentials() {
+  return resolveJiraCreds();
 }

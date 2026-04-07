@@ -18,6 +18,7 @@ import perfAgentRoutes from './routes/perfAgentRoutes.js';
 import incidentAgentRoutes from './routes/incidentAgentRoutes.js';
 import gitRoutes from './routes/gitRoutes.js';
 import promptRoutes from './routes/promptRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api', perfAgentRoutes);
 app.use('/api', incidentAgentRoutes);
 app.use('/api', gitRoutes);
 app.use('/api', promptRoutes);
+app.use('/api', settingsRoutes);
 app.use(express.static(frontendDir));
 
 app.get('*', (req, res) => {

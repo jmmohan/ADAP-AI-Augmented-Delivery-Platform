@@ -205,6 +205,23 @@ body {
   color: #000000;
 }
 
+.settings-btn {
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text2);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 10px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: all .15s;
+}
+.settings-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
 .theme-toggle {
   border: 1px solid var(--border);
   background: var(--bg2);

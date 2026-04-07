@@ -1,5 +1,6 @@
 import {
   connectToJira,
+  connectFromGlobalSettings,
   generateReport,
   isJiraConnected,
   listEpics,
@@ -25,6 +26,18 @@ export async function connect(req, res, next) {
     const result = await connectToJira(req.body);
     if (!result.connected) {
       return res.status(401).json({ message: result.message });
+    }
+    return res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function connectGlobal(req, res, next) {
+  try {
+    const result = await connectFromGlobalSettings();
+    if (!result.connected) {
+      return res.status(400).json({ message: result.message });
     }
     return res.json(result);
   } catch (error) {

@@ -226,3 +226,87 @@ export async function publishStories({ url, project, email, token, parentEpicKey
 
   return { created, failed, total: stories.length };
 }
+
+/**
+ * Fetch user stories (type = Story) that belong to one or more parent epics.
+ * Uses JQL: issuetype = Story AND parent in (EPIC-1, EPIC-2, ...)
+ * @returns {Array<{ key, summary, description, status, priority, storyPoints, parentKey }>}
+ */
+export async function fetchStoriesByEpics({ url, project, email, token, epicKeys }) {
+  const baseUrl = normalizeBaseUrl(url);
+  const epicList = epicKeys.map((k) => `"${k}"`).join(', ');
+  const jql = `project = "${project}" AND issuetype = Story AND parent in (${epicList}) ORDER BY created DESC`;
+  const authHeader = buildAuthHeader(email, token);
+  const searchBody = {
+    jql,
+    fields: ['summary', 'description', 'status', 'priority', 'story_points', 'parent'],
+    maxResults: 100
+  };
+  const jsonHeaders = { Authorization: authHeader, Accept: 'application/json', 'Content-Type': 'application/json' };
+
+  // Try endpoints in order (same fallback pattern as fetchEpics)
+  let res = await fetch(`${baseUrl}/rest/api/3/search/jql`, {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify(searchBody)
+  });
+
+  if (res.status === 404 || res.status === 410) {
+    res = await fetch(`${baseUrl}/rest/api/3/search`, {
+      method: 'POST',
+      headers: jsonHeaders,
+      body: JSON.stringify(searchBody)
+    });
+  }
+
+  if (res.status === 404 || res.status === 410 || res.status === 405) {
+    const params = new URLSearchParams({
+      jql,
+      fields: 'summary,description,status,priority,story_points,parent',
+      maxResults: '100'
+    });
+    res = await fetch(`${baseUrl}/rest/api/2/search?${params}`, {
+      headers: { Authorization: authHeader, Accept: 'application/json' }
+    });
+  }
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`Jira story search failed (HTTP ${res.status}): ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  return (data.issues || []).map((issue) => ({
+    key: issue.key,
+    summary: issue.fields.summary || '',
+    description: extractPlainText(issue.fields.description),
+    status: issue.fields.status?.name || 'Unknown',
+    priority: issue.fields.priority?.name || 'Medium',
+    storyPoints: issue.fields.story_points || null,
+    parentKey: issue.fields.parent?.key || null
+  }));
+}
+
+/**
+ * Add a comment to a Jira issue (used to publish architecture docs to epics).
+ * @returns {{ id: string, self: string }}
+ */
+export async function addCommentToIssue({ url, email, token, issueKey, commentBody }) {
+  const baseUrl = normalizeBaseUrl(url);
+  const res = await fetch(`${baseUrl}/rest/api/3/issue/${encodeURIComponent(issueKey)}/comment`, {
+    method: 'POST',
+    headers: {
+      Authorization: buildAuthHeader(email, token),
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ body: toADF(commentBody) })
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Failed to add comment (HTTP ${res.status}): ${errBody}`);
+  }
+
+  return res.json();
+}
